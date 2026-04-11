@@ -3,6 +3,7 @@ import type { GameState } from '../../domain/game'
 import { selectStatusSidebarViewModel } from '../../application/game/selectors'
 import { InfoRow, Button, Surface, Textarea } from '../system'
 import { LiveMeter } from '../components/LiveMeter'
+import { TrustThresholdMeter } from '../components/TrustThresholdMeter'
 
 interface StatusSidebarProps {
   state: GameState
@@ -48,6 +49,9 @@ export function StatusSidebar({
           <LiveMeter label="Clip throughput" value={state.lastTickProduction} accent="cyanish" tooltip="Clips produced during the latest tick." />
           <LiveMeter label="Sales velocity" value={state.lastTickSales} accent="violet" tooltip="Clips sold during the latest tick." />
           <LiveMeter label="Cashflow" value={state.lastTickRevenue} prefix="$" suffix="/ tick" accent="emerald" tooltip="Revenue earned during the latest tick." />
+        </div>
+        <div className="mt-3">
+          <TrustThresholdMeter state={state} />
         </div>
       </Surface>
 

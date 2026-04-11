@@ -2,6 +2,7 @@ import type { RefObject } from 'react'
 import { formatCurrency, formatNumber, type GameAction, type GameState } from '../../../domain/game'
 import { selectIndustryScreenViewModel } from '../../../application/game/selectors'
 import { ActionPanel } from '../../components/ActionPanel'
+import { TrustThresholdMeter } from '../../components/TrustThresholdMeter'
 import { Button, CardGrid, InfoRow, PanelCard } from '../../system'
 
 interface IndustryScreenProps {
@@ -116,6 +117,7 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
           secondaryLabel="Add memory"
           secondaryTooltip="Spend one available trust slot on more memory."
           onSecondary={() => dispatch({ type: 'addMemory' })}
+          footer={<TrustThresholdMeter state={state} />}
         />
       ) : null}
 
