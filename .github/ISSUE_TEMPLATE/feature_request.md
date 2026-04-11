@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an improvement or new feature
+about: Suggest a gameplay, UI, or tooling improvement
 title: ''
 labels: enhancement
 ---
