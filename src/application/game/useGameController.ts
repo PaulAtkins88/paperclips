@@ -1,11 +1,10 @@
 import { useEffect, useReducer } from 'react'
-import { createGameState } from './engine'
-import { reduceGameState } from './reducer'
+import { createInitialGameState, reduceGameState } from '../../domain/game'
 import { loadGame, saveGame } from '../save/storage'
 import { DEFAULT_TICK_MS, startTickLoop } from './tickScheduler'
 
 export function useGameController() {
-  const [state, dispatch] = useReducer(reduceGameState, undefined, () => loadGame() ?? createGameState())
+  const [state, dispatch] = useReducer(reduceGameState, undefined, () => loadGame() ?? createInitialGameState())
 
   useEffect(() => startTickLoop(() => dispatch({ type: 'tick', deltaMs: DEFAULT_TICK_MS })), [])
 
