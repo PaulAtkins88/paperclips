@@ -22,10 +22,18 @@ pnpm lint
 - `src/domain` - core game rules and state
 - `src/application` - orchestration, selectors, and persistence
 - `src/ui` - screens, layout, and shared UI primitives
+- `docs/README.md` - project notes and planning docs
+- `docs/labels.md` - suggested GitHub labels
 
 ## Contributing
 
 Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
+
+## Project Docs
+
+- [`CHANGELOG.md`](CHANGELOG.md)
+- [`docs/README.md`](docs/README.md)
+- [`docs/labels.md`](docs/labels.md)
 
 ## License
 
