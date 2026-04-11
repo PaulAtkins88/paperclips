@@ -34,6 +34,8 @@ Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
 - [`CHANGELOG.md`](CHANGELOG.md)
 - [`docs/README.md`](docs/README.md)
 - [`docs/labels.md`](docs/labels.md)
+- [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md)
+- [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md)
 
 ## License
 
