@@ -111,6 +111,7 @@ function App() {
                 <MetricSummary label="Price per Clip" value={clipPrice} />
                 <MetricSummary label="AutoClippers" value={String(state.production.autoClippers)} />
                 <MetricSummary label="Marketing" value={`Level ${state.production.marketingLevel}`} />
+                <MetricSummary label="Creativity" value={String(state.compute.creativity)} />
                 <MetricSummary label="Wire Spool" value={String(state.economy.wireSupply)} />
                 <MetricSummary label="Ops / Max" value={`${state.compute.operations}/${state.compute.memory * 1000}`} />
                 <MetricSummary label="Yomi" value={String(state.strategy.yomi)} />
