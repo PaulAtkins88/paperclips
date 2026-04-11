@@ -5,6 +5,7 @@ This directory holds project notes and planning material.
 ## Contents
 
 - `parity-rebuild-plan.md` - implementation plan for the remake
+- `maintainer-notes.md` - subsystem notes for complex game logic
 
 ## For contributors
 

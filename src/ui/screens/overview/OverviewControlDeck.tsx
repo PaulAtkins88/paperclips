@@ -1,4 +1,4 @@
-import type { RefObject, ReactNode } from 'react'
+import type { RefObject } from 'react'
 import { WIRE_PER_CLIP, WIRE_UNIT_LABEL, type GameAction, type GameState } from '../../../domain/game'
 import { Button, Input, PanelCard, SectionCard } from '../../system'
 
