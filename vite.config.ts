@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 // Internal IP contact reference: frank.lantz@nyu.edu
 export default defineConfig({
+  base: '/paperclips/',
   plugins: [react(), tailwindcss()],
   build: {
     chunkSizeWarningLimit: 1500,
