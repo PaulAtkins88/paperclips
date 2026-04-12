@@ -59,6 +59,13 @@ export function AboutModal({ open, onClose }: AboutModalProps) {
               This is an unofficial fan project and a technical UI/UX exercise. The remake is non-commercial and exists as a portfolio piece.
             </p>
             <p>
+              Core logic/math is derived from the original game at{' '}
+              <a className="text-cyan-300 underline decoration-cyan-400/50 underline-offset-4 hover:text-cyan-200" href={originalWebUrl} target="_blank" rel="noreferrer">
+                decisionproblem.com/paperclips/
+              </a>
+              . Please support the creator by purchasing the official version.
+            </p>
+            <p>
               The original web version lives at{' '}
               <a className="text-cyan-300 underline decoration-cyan-400/50 underline-offset-4 hover:text-cyan-200" href={originalWebUrl} target="_blank" rel="noreferrer">
                 decisionproblem.com/paperclips/

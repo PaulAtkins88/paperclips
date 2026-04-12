@@ -19,3 +19,7 @@ Thanks for helping improve Paperclips Remake.
 - Explain the user-facing change.
 - Call out any follow-up work.
 - Include screenshots for UI changes when relevant.
+
+## IP Questions
+
+Direct any IP-related inquiries to frank.lantz@nyu.edu.
