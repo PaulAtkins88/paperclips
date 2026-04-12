@@ -96,6 +96,7 @@ export function StatusSidebar({
           <p className="mt-2 text-xs uppercase tracking-[0.24em] text-slate-500">{copyMessage || 'Browser save active.'}</p>
         </Surface>
       ) : null}
+
     </aside>
   )
 }

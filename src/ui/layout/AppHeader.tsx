@@ -10,9 +10,10 @@ interface AppHeaderProps<TTab extends string> {
   tabs: Array<{ id: TTab; label: string }>
   activeTab: TTab
   onTabChange: (tabId: TTab) => void
+  onOpenAbout: () => void
 }
 
-export function AppHeader<TTab extends string>({ state, demand, phaseLabel, tabs, activeTab, onTabChange }: AppHeaderProps<TTab>) {
+export function AppHeader<TTab extends string>({ state, demand, phaseLabel, tabs, activeTab, onTabChange, onOpenAbout }: AppHeaderProps<TTab>) {
   const viewModel = selectHeaderViewModel(state, demand, phaseLabel)
 
   return (
@@ -37,6 +38,9 @@ export function AppHeader<TTab extends string>({ state, demand, phaseLabel, tabs
               {tab.label}
             </Button>
           ))}
+          <Button variant="ghost" onClick={onOpenAbout} type="button" className="ml-auto">
+            About / Credits
+          </Button>
         </nav>
       </div>
     </header>

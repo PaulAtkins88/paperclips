@@ -1,3 +1,9 @@
+/**
+ * Game logic, mathematical constants, and project definitions are derived from
+ * the original Universal Paperclips (© Frank Lantz). This implementation is an
+ * unofficial, non-commercial reconstruction.
+ */
+
 import { computeAutoClipperCost, computeMegaClipperCost, DEFAULT_CLIPPER_BOOST, DEFAULT_MEGA_CLIPPER_BOOST } from './economy/clippers'
 import {
   addMemory,

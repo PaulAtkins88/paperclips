@@ -17,6 +17,7 @@ import { ProjectsScreen } from './ui/screens/projects/ProjectsScreen'
 import { SpaceScreen } from './ui/screens/space/SpaceScreen'
 import { CombatScreen } from './ui/screens/combat/CombatScreen'
 import { Button, Surface } from './ui/system'
+import { AboutModal } from './ui/components/AboutModal'
 
 type TabId = 'overview' | 'industry' | 'projects' | 'space' | 'combat'
 
@@ -27,6 +28,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabId>('overview')
   const [importValue, setImportValue] = useState('')
   const [copyMessage, setCopyMessage] = useState('')
+  const [aboutOpen, setAboutOpen] = useState(false)
   const priceInputRef = useRef<HTMLInputElement>(null)
 
   const demand = useMemo(() => `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(state.economy.demand * 10)}%`, [state.economy.demand])
@@ -78,7 +80,15 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      <AppHeader state={state} demand={demand} phaseLabel={phaseLabel} tabs={visibleTabs} activeTab={activeTab} onTabChange={setActiveTab} />
+      <AppHeader
+        state={state}
+        demand={demand}
+        phaseLabel={phaseLabel}
+        tabs={visibleTabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onOpenAbout={() => setAboutOpen(true)}
+      />
 
       <main className="mx-auto grid max-w-[112rem] gap-4 px-4 py-4 sm:px-6 lg:min-h-[calc(100vh-8.5rem)] lg:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.55fr)] lg:px-8 lg:py-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(24rem,0.45fr)] 2xl:grid-cols-[minmax(0,1.62fr)_minmax(26rem,0.42fr)]">
         <section className="grid content-start gap-4">
@@ -180,6 +190,8 @@ function App() {
           }}
         />
       </main>
+
+      <AboutModal open={aboutOpen} onClose={() => setAboutOpen(false)} />
     </div>
   )
 }

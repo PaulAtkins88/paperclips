@@ -29,6 +29,14 @@ pnpm lint
 
 Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
 
+## Credits
+
+This project is an unofficial fan remake of *Universal Paperclips* by Frank Lantz. The original game and its concept were created by Frank Lantz, Chair of the NYU Game Center. His professional site is [franklantz.net](http://www.franklantz.net).
+
+The code in this repository is a non-commercial portfolio exercise with a custom UI/UX layer built from scratch. Core game logic, pacing, and mathematical behavior were reconstructed from the original web release at [decisionproblem.com/paperclips/](https://decisionproblem.com/paperclips/).
+
+If you enjoy the game, please support the original creator by using the official versions linked in the app's About / Credits panel.
+
 ## Project Docs
 
 - [`CHANGELOG.md`](CHANGELOG.md)
