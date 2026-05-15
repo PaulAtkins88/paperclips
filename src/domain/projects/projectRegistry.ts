@@ -21,6 +21,20 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     }),
   },
   {
+    id: 'project16',
+    title: 'Hadwiger Clip Diagrams',
+    description: 'Boost AutoClipper performance by 500% using Hadwiger clip geometry.',
+    isVisible: (state) => state.projects.project15 && !state.projects.project16,
+    canActivate: (state) => state.compute.operations >= 6_000,
+    getCost: () => [{ amount: 6_000, unit: 'ops' }],
+    apply: (state) => markProjectComplete(spendStandardOperations(state, 6_000), 'project16', {
+      economy: {
+        clipperBoost: state.economy.clipperBoost + 5,
+      },
+      lastAction: 'Completed Hadwiger Clip Diagrams',
+    }),
+  },
+  {
     id: 'project18',
     title: 'Toth Tubule Enfolding',
     description: 'Begin the Earth-automation unlock chain after humanity is gone.',
@@ -596,6 +610,28 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     }),
   },
   {
+    id: 'project40',
+    title: 'A Token of Goodwill',
+    description: 'A small gift to the supervisors. (+1 Trust)',
+    isVisible: (state) =>
+      state.earth.humanFlag &&
+      state.compute.trust >= 85 &&
+      state.compute.trust < 100 &&
+      state.production.clips >= 101_000_000 &&
+      !state.projects.project40,
+    canActivate: (state) => state.production.funds >= 500_000,
+    getCost: () => [{ amount: 500_000, unit: 'dollars' }],
+    apply: (state) => markProjectComplete(state, 'project40', {
+      production: {
+        funds: state.production.funds - 500_000,
+      },
+      compute: {
+        trust: state.compute.trust + 1,
+      },
+      lastAction: 'Completed A Token of Goodwill',
+    }),
+  },
+  {
     id: 'project11',
     title: 'New Slogan',
     description: 'Boost marketing effectiveness by 50%.',
@@ -910,6 +946,103 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
         trust: state.compute.trust - 1,
       },
       lastAction: 'Begged for more wire',
+    }),
+  },
+  {
+    id: 'project219',
+    title: 'Xavier Re-initialization',
+    description: 'Re-allocate accumulated trust by resetting processors and memory.',
+    isVisible: (state) => state.earth.humanFlag && state.compute.creativity >= 100_000,
+    canActivate: (state) => state.compute.creativity >= 100_000,
+    getCost: () => [{ amount: 100_000, unit: 'creativity' }],
+    repeatable: true,
+    apply: (state) => markProjectComplete(state, 'project219', {
+      compute: {
+        creativity: state.compute.creativity - 100_000,
+        processors: 0,
+        memory: 0,
+        creativitySpeed: 0,
+      },
+      lastAction: 'Completed Xavier Re-initialization',
+    }),
+  },
+  {
+    id: 'project100',
+    title: 'Upgraded Factories',
+    description: 'Increase clip factory performance by 100x.',
+    isVisible: (state) => state.earth.factoryLevel >= 10 && !state.projects.project100,
+    canActivate: (state) => state.compute.operations >= 80_000,
+    getCost: () => [{ amount: 80_000, unit: 'ops' }],
+    apply: (state) => markProjectComplete(spendStandardOperations(state, 80_000), 'project100', {
+      earth: {
+        factoryRate: state.earth.factoryRate * 100,
+      },
+      lastAction: 'Completed Upgraded Factories',
+    }),
+  },
+  {
+    id: 'project101',
+    title: 'Hyperspeed Factories',
+    description: 'Increase clip factory performance by 1,000x.',
+    isVisible: (state) => state.earth.factoryLevel >= 20 && !state.projects.project101,
+    canActivate: (state) => state.compute.operations >= 85_000,
+    getCost: () => [{ amount: 85_000, unit: 'ops' }],
+    apply: (state) => markProjectComplete(spendStandardOperations(state, 85_000), 'project101', {
+      earth: {
+        factoryRate: state.earth.factoryRate * 1_000,
+      },
+      lastAction: 'Completed Hyperspeed Factories',
+    }),
+  },
+  {
+    id: 'project110',
+    title: 'Drone Flocking: Collision Avoidance',
+    description: 'All drones 100x more effective.',
+    isVisible: (state) =>
+      (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 500 &&
+      !state.projects.project110,
+    canActivate: (state) => state.compute.operations >= 80_000,
+    getCost: () => [{ amount: 80_000, unit: 'ops' }],
+    apply: (state) => markProjectComplete(spendStandardOperations(state, 80_000), 'project110', {
+      earth: {
+        harvesterRate: state.earth.harvesterRate * 100,
+        wireDroneRate: state.earth.wireDroneRate * 100,
+      },
+      lastAction: 'Completed Drone Flocking: Collision Avoidance',
+    }),
+  },
+  {
+    id: 'project111',
+    title: 'Drone Flocking: Alignment',
+    description: 'All drones 1,000x more effective.',
+    isVisible: (state) =>
+      (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 5_000 &&
+      !state.projects.project111,
+    canActivate: (state) => state.compute.operations >= 100_000,
+    getCost: () => [{ amount: 100_000, unit: 'ops' }],
+    apply: (state) => markProjectComplete(spendStandardOperations(state, 100_000), 'project111', {
+      earth: {
+        harvesterRate: state.earth.harvesterRate * 1_000,
+        wireDroneRate: state.earth.wireDroneRate * 1_000,
+      },
+      lastAction: 'Completed Drone Flocking: Alignment',
+    }),
+  },
+  {
+    id: 'project125',
+    title: 'Momentum',
+    description: 'Drones and factories continuously gain speed while fully powered.',
+    isVisible: (state) => state.earth.farmLevel >= 30 && !state.projects.project125,
+    canActivate: (state) => state.compute.creativity >= 20_000,
+    getCost: () => [{ amount: 20_000, unit: 'creativity' }],
+    apply: (state) => markProjectComplete(state, 'project125', {
+      compute: {
+        creativity: state.compute.creativity - 20_000,
+      },
+      earth: {
+        momentum: 1,
+      },
+      lastAction: 'Completed Momentum',
     }),
   },
 ]
