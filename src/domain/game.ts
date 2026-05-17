@@ -60,6 +60,7 @@ import {
   type TournamentResult,
 } from './strategy/tournaments'
 import type { ProjectCost, ProjectId, VisibleProject } from './projects/projectTypes'
+import { setSwarmComputingBalance, GIFT_PERIOD } from './compute/swarm'
 
 export type GamePhase = 'boot' | 'industry' | 'compute' | 'expansion'
 export type GameEarthPhase = 'human' | 'postHuman'
@@ -111,7 +112,15 @@ export interface GameCompute {
   opFade: number
   opFadeTimer: number
   opFadeDelay: number
+  swarmFlag: boolean
+  giftBits: number
+  giftPeriod: number
   swarmGifts: number
+  boredomLevel: number
+  boredomFlag: boolean
+  disorgFlag: boolean
+  disorgCounter: number
+  swarmComputingBalance: number
 }
 
 export interface GamePrestige {
@@ -331,6 +340,7 @@ export type GameAction =
   | { type: 'buyWireDrone' }
   | { type: 'buyFarm' }
   | { type: 'buyBattery' }
+  | { type: 'setSwarmComputingBalance'; workThinkBalance: number }
   | { type: 'launchProbe' }
   | { type: 'increaseProbeTrust' }
   | { type: 'increaseMaxTrust' }
@@ -410,7 +420,15 @@ export function createInitialGameState(): GameState {
       opFade: 0,
       opFadeTimer: 0,
       opFadeDelay: OP_FADE_DELAY,
+      swarmFlag: false,
+      giftBits: 0,
+      giftPeriod: GIFT_PERIOD,
       swarmGifts: 0,
+      boredomLevel: 0,
+      boredomFlag: false,
+      disorgFlag: false,
+      disorgCounter: 0,
+      swarmComputingBalance: 0,
     },
     prestige: {
       universe: 0,
@@ -556,6 +574,8 @@ export function reduceGameState(state: GameState, action: GameAction): GameState
       return buyFarm(state)
     case 'buyBattery':
       return buyBattery(state)
+    case 'setSwarmComputingBalance':
+      return setSwarmComputingBalance(state, action.workThinkBalance)
     case 'launchProbe':
       return launchProbe(state)
     case 'increaseProbeTrust':
@@ -885,6 +905,7 @@ export function createInitialProjectFlags(): Record<ProjectId, boolean> {
     project119: false,
     project120: false,
     project121: false,
+    project126: false,
     project129: false,
     project132: false,
     project133: false,

@@ -23,6 +23,7 @@ import {
 } from '../../domain/space/space'
 import { cycleStrategySelection, runTournament } from '../../domain/strategy/tournaments'
 import { createSeededRng } from '../fixtures/seeded-rng'
+import { calculateSwarmComputingGifts } from '../../domain/compute/swarm'
 
 describe('early economy parity', () => {
   it('matches original demand formula', () => {
@@ -632,6 +633,42 @@ describe('early economy parity', () => {
     expect(statusAfterDischarge.storedPower).toBe(200)
     expect(statusAfterDischarge.performancePercent).toBe(100)
     expect(supported.earth.powMod).toBe(1)
+  })
+
+  it('generates swarm gifts at the original log rate and fires on threshold crossing', () => {
+    const droneCount = 1_000_000
+    const swarmComputingBalance = 50
+
+    const state = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        powMod: 1,
+        harvesterLevel: droneCount / 2,
+        wireDroneLevel: droneCount / 2,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        swarmFlag: true,
+        swarmComputingBalance,
+        giftBits: 0,
+        swarmGifts: 0,
+      },
+    }
+
+    const next = calculateSwarmComputingGifts(state)
+    const expectedRate = Math.log(droneCount) * (swarmComputingBalance / 50)
+
+    expect(next.compute.giftBits).toBeCloseTo(expectedRate, 10)
+    expect(next.compute.swarmGifts).toBe(0)
+
+    const nearThreshold = {
+      ...state,
+      compute: { ...state.compute, giftBits: state.compute.giftPeriod - 0.001 },
+    }
+    const fired = calculateSwarmComputingGifts(nearThreshold)
+    expect(fired.compute.giftBits).toBe(0)
+    expect(fired.compute.swarmGifts).toEqual(Math.round(Math.log10(droneCount) * (swarmComputingBalance / 50)))
   })
 
   it('reduces Earth performance when power supply and storage cannot meet demand', () => {

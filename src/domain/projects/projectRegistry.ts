@@ -652,6 +652,23 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     }),
   },
   {
+    id: 'project126',
+    title: 'Swarm Computing',
+    description: 'Harness the drone flock to increase computational capacity',
+    isVisible: (state) => state.earth.harvesterLevel + state.earth.wireDroneLevel >= 200 && !state.projects.project126,
+    canActivate: (state) => state.strategy.yomi >= 36_000,
+    getCost: () => [{ amount: 36_000, unit: 'yomi' }],
+    apply: (state) => markProjectComplete(state, 'project126', {
+      compute: {
+        swarmFlag: true,
+      },
+      strategy: {
+        yomi: state.strategy.yomi - 36_000,
+      },
+      lastAction: 'Swarm computing online',
+    }),
+  },
+  {
     id: 'project127',
     title: 'Power Grid',
     description: 'Bring the terrestrial power grid online for the Earth phase.',

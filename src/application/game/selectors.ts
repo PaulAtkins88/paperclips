@@ -12,6 +12,7 @@ import {
 } from '../../domain/game'
 import { getEarthPowerStatus } from '../../domain/earth/earth'
 import { getSpaceStatus } from '../../domain/space/space'
+import { getTotalDroneCount, timeUntilSwarmGift } from '../../domain/compute/swarm'
 
 export interface InfoRowViewModel {
   label: string
@@ -232,11 +233,20 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string) 
   const earthPower = getEarthPowerStatus(state)
   const showEarthProduction = visibility.showPostHuman && (state.earth.harvesterFlag || state.earth.wireDroneFlag || state.earth.factoryFlag)
   const showPowerGrid = visibility.showPostHuman && state.earth.powerGridFlag
+  const showSwarmComputing = state.compute.swarmFlag
+  const droneCount = getTotalDroneCount(state)
+  const droneStatus: 'Active' | 'Disorganized' | 'Bored' = state.compute.disorgFlag ? 'Disorganized' : state.compute.boredomFlag ? 'Bored' : 'Active'
+  const swarmSliderPosition = state.compute.swarmComputingBalance
 
   return {
     ...visibility,
     showEarthProduction,
     showPowerGrid,
+    showSwarmComputing,
+    droneCount,
+    swarmSliderPosition,
+    droneStatus,
+    timeUntilSwarmGift: timeUntilSwarmGift(state),
     automationNote: `AutoClipper cost ${formatCurrency(state.production.autoClipperCost)}. MegaClipper ${state.projects.project22 ? formatCurrency(state.production.megaClipperCost) : 'locked'}.`,
     marketingNote: `Current level ${formatNumber(state.production.marketingLevel)}. Next ad cost ${formatCurrency(state.economy.adCost)}.`,
     transitionRows: [

@@ -4,6 +4,7 @@ import { selectIndustryScreenViewModel } from '../../../application/game/selecto
 import { ActionPanel } from '../../components/ActionPanel'
 import { TrustThresholdMeter } from '../../components/TrustThresholdMeter'
 import { Button, CardGrid, InfoRow, PanelCard } from '../../system'
+import { SwarmPanel } from '../../components/SwarmPanel'
 
 interface IndustryScreenProps {
   state: GameState
@@ -154,6 +155,16 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
           primaryTooltip="Switch to the active project list."
           onPrimary={onOpenProjects}
           note={viewModel.creativityNote}
+        />
+      ) : null}
+
+      {viewModel.showSwarmComputing ? (
+        <SwarmPanel
+          droneCount={viewModel.droneCount}
+          onDrag={workThinkBalance => dispatch({ type: 'setSwarmComputingBalance', workThinkBalance })}
+          swarmSliderPosition={viewModel.swarmSliderPosition}
+          timeUntilSwarmGift={viewModel.timeUntilSwarmGift}
+          droneStatus={viewModel.droneStatus}
         />
       ) : null}
 
