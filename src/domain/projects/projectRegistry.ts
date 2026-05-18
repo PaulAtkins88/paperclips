@@ -669,6 +669,20 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     }),
   },
   {
+    id: 'project130',
+    title: 'Reboot the Swarm',
+    description: 'Turn the swarm off and then turn it back on again.',
+    isVisible: (state) => state.earth.spaceFlag && state.earth.harvesterLevel + state.earth.wireDroneLevel >= 2 && !state.projects.project130,
+    canActivate: (state) => state.compute.operations >= 100_000,
+    getCost: () => [{ amount: 100_000, unit: 'ops' }],
+    apply: (state) => markProjectComplete(spendStandardOperations(state, 100_000), 'project130', {
+      compute: {
+        swarmFlag: true,
+      },
+      lastAction: 'Rebooted the Swarm; swarm computing back online',
+    }),
+  },
+  {
     id: 'project127',
     title: 'Power Grid',
     description: 'Bring the terrestrial power grid online for the Earth phase.',

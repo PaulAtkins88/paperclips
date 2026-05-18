@@ -906,6 +906,7 @@ export function createInitialProjectFlags(): Record<ProjectId, boolean> {
     project120: false,
     project121: false,
     project126: false,
+    project130: false,
     project129: false,
     project132: false,
     project133: false,

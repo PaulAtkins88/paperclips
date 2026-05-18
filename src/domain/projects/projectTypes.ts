@@ -64,6 +64,7 @@ export type ProjectId =
   | 'project133'
   | 'project134'
   | 'project126'
+  | 'project130'
   | 'project131'
   | 'project127'
   | 'project219'
