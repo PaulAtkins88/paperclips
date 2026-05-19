@@ -23,7 +23,7 @@ import {
 } from '../../domain/space/space'
 import { cycleStrategySelection, runTournament } from '../../domain/strategy/tournaments'
 import { createSeededRng } from '../fixtures/seeded-rng'
-import { calculateSwarmComputingGifts } from '../../domain/compute/swarm'
+import { calculateSwarmComputingGifts, entertainSwarm, synchronizeSwarm } from '../../domain/compute/swarm'
 
 describe('early economy parity', () => {
   it('matches original demand formula', () => {
@@ -669,6 +669,75 @@ describe('early economy parity', () => {
     const fired = calculateSwarmComputingGifts(nearThreshold)
     expect(fired.compute.giftBits).toBe(0)
     expect(fired.compute.swarmGifts).toEqual(Math.round(Math.log10(droneCount) * (swarmComputingBalance / 50)))
+  })
+
+  it('triggers boredom after 5 minutes of idle drones and clears with creativity cost', () => {
+    const FIVE_MINUTES_OF_TICKS = (5 * 60 * 1000) / 10
+
+    const state = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        powMod: 1,
+        harvesterLevel: 100,
+        wireDroneLevel: 100,
+        availableMatter: 0,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        creativity: 100_000,
+        entertainCost: 10_000,
+        swarmFlag: true,
+        swarmComputingBalance: 50,
+        boredomLevel: FIVE_MINUTES_OF_TICKS - 2,
+      },
+    }
+
+    const notYet = calculateSwarmComputingGifts(state)
+    expect(notYet.compute.boredomFlag).toBe(false)
+    expect(notYet.compute.boredomLevel).toBe(FIVE_MINUTES_OF_TICKS - 1)
+
+    const fired = calculateSwarmComputingGifts(notYet)
+    expect(fired.compute.boredomFlag).toBe(true)
+    expect(fired.compute.boredomLevel).toBe(0)
+
+    const entertained = entertainSwarm(fired)
+    expect(entertained.compute.boredomFlag).toBe(false)
+    expect(entertained.compute.creativity).toBe(90_000)
+    expect(entertained.compute.entertainCost).toBe(20_000)
+  })
+
+  it('triggers disorganization at the original harvester to wire drone ratio and clears with yomi', () => {
+    const state = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        powMod: 1,
+        harvesterLevel: 10_000,
+        wireDroneLevel: 100,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        swarmFlag: true,
+        swarmComputingBalance: 50,
+        disorgCounter: 99.99,
+      },
+      strategy: {
+        ...createInitialGameState().strategy,
+        yomi: 10_000,
+      },
+    }
+
+    const notYet = calculateSwarmComputingGifts(state)
+    expect(notYet.compute.disorgFlag).toBe(false)
+
+    const fired = calculateSwarmComputingGifts(notYet)
+    expect(fired.compute.disorgFlag).toBe(true)
+
+    const synced = synchronizeSwarm(fired)
+    expect(synced.compute.disorgFlag).toBe(false)
+    expect(synced.compute.disorgCounter).toBe(0)
+    expect(synced.strategy.yomi).toBe(5_000)
   })
 
   it('reduces Earth performance when power supply and storage cannot meet demand', () => {

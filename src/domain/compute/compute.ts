@@ -3,8 +3,7 @@ import { calculateCreativity, canUnlockCreativity } from './creativity'
 import { calculateOperations, spendOperations } from './operations'
 import { calculateSwarmComputingGifts } from './swarm'
 import { calculateTrust, canAllocateTrust, shouldUnlockCompute } from './trust'
-
-export const COMPUTE_TICK_MS = 10
+import { COMPUTE_TICK_MS } from './constants'
 
 export function syncComputeState(state: GameState): GameState {
   const unlocked = shouldUnlockCompute(state)

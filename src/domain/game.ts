@@ -60,7 +60,7 @@ import {
   type TournamentResult,
 } from './strategy/tournaments'
 import type { ProjectCost, ProjectId, VisibleProject } from './projects/projectTypes'
-import { setSwarmComputingBalance, GIFT_PERIOD } from './compute/swarm'
+import { setSwarmComputingBalance, entertainSwarm, GIFT_PERIOD, INITIAL_ENTERTAIN_COST, SYNCHRONIZATION_COST, synchronizeSwarm } from './compute/swarm'
 
 export type GamePhase = 'boot' | 'industry' | 'compute' | 'expansion'
 export type GameEarthPhase = 'human' | 'postHuman'
@@ -117,9 +117,11 @@ export interface GameCompute {
   giftPeriod: number
   swarmGifts: number
   boredomLevel: number
+  entertainCost: number
   boredomFlag: boolean
   disorgFlag: boolean
   disorgCounter: number
+  synchCost: number
   swarmComputingBalance: number
 }
 
@@ -341,6 +343,8 @@ export type GameAction =
   | { type: 'buyFarm' }
   | { type: 'buyBattery' }
   | { type: 'setSwarmComputingBalance'; workThinkBalance: number }
+  | { type: 'entertainSwarm' }
+  | { type: 'synchronizeSwarm' }
   | { type: 'launchProbe' }
   | { type: 'increaseProbeTrust' }
   | { type: 'increaseMaxTrust' }
@@ -426,8 +430,10 @@ export function createInitialGameState(): GameState {
       swarmGifts: 0,
       boredomLevel: 0,
       boredomFlag: false,
+      entertainCost: INITIAL_ENTERTAIN_COST,
       disorgFlag: false,
       disorgCounter: 0,
+      synchCost: SYNCHRONIZATION_COST,
       swarmComputingBalance: 0,
     },
     prestige: {
@@ -576,6 +582,10 @@ export function reduceGameState(state: GameState, action: GameAction): GameState
       return buyBattery(state)
     case 'setSwarmComputingBalance':
       return setSwarmComputingBalance(state, action.workThinkBalance)
+    case 'entertainSwarm':
+      return entertainSwarm(state)
+    case 'synchronizeSwarm':
+      return synchronizeSwarm(state)
     case 'launchProbe':
       return launchProbe(state)
     case 'increaseProbeTrust':

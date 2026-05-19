@@ -1,7 +1,10 @@
 import type { GameState } from '../game'
-import { COMPUTE_TICK_MS } from './compute'
+import { COMPUTE_TICK_MS } from './constants'
 
 export const GIFT_PERIOD = 125_000
+export const SYNCHRONIZATION_COST = 5_000
+export const INITIAL_ENTERTAIN_COST = 10_000
+const BOREDOM_THRESHOLD = (5 * 60 * 1000) / COMPUTE_TICK_MS
 
 export function setSwarmComputingBalance(state: GameState, workThinkBalance: number): GameState {
   if (!state.compute.swarmFlag || workThinkBalance < 0 || workThinkBalance > 100) {
@@ -74,7 +77,7 @@ function updateBoredom(state: GameState): GameState {
   const matterDepleted = state.earth.availableMatter === 0
   const delta = matterDepleted ? 1 : -1
   const newLevel = Math.max(0, state.compute.boredomLevel + delta)
-  const fired = newLevel >= 30_000
+  const fired = newLevel >= BOREDOM_THRESHOLD
 
   return {
     ...state,
@@ -127,4 +130,39 @@ export function timeUntilSwarmGift(state: GameState): string | null {
   const sDisplay = seconds > 0 ? seconds + (seconds == 1 ? " second" : " seconds") : ""
 
   return hDisplay + mDisplay + sDisplay;
+}
+
+export function entertainSwarm(state: GameState): GameState {
+  if (!state.compute.boredomFlag || state.compute.creativity < state.compute.entertainCost) {
+    return state
+  }
+
+  return {
+    ...state,
+    compute: {
+      ...state.compute,
+      creativity: state.compute.creativity - state.compute.entertainCost,
+      entertainCost: state.compute.entertainCost + 10_000,
+      boredomFlag: false,
+    }
+  }
+}
+
+export function synchronizeSwarm(state: GameState): GameState {
+  if (!state.compute.disorgFlag || state.strategy.yomi < state.compute.synchCost) {
+    return state
+  }
+
+  return {
+    ...state,
+    strategy: {
+      ...state.strategy,
+      yomi: state.strategy.yomi - state.compute.synchCost,
+    },
+    compute: {
+      ...state.compute,
+      disorgFlag: false,
+      disorgCounter: 0,
+    },
+  }
 }

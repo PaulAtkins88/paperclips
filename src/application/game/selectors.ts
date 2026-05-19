@@ -24,6 +24,18 @@ export interface StatChipViewModel {
   value: string
 }
 
+export type SwarmStatus = 'Sleeping' | 'No response' | 'No drones' | 'Lonely' | 'Active' | 'Bored' | 'Disorganized'
+
+function getDroneStatus(state: GameState): SwarmStatus {
+  if (state.compute.disorgFlag) return 'Disorganized'
+  if (state.compute.boredomFlag) return 'Bored'
+  if (getTotalDroneCount(state) === 1) return 'Lonely'
+  if (getTotalDroneCount(state) === 0) return 'No drones'
+  if (state.earth.spaceFlag && !state.projects.project130) return 'No response'
+  if (state.earth.powMod === 0 || !state.compute.swarmFlag) return 'Sleeping'
+  return 'Active'
+}
+
 function getUiVisibility(state: GameState) {
   return {
     showCompute: state.compute.unlocked || state.compute.operations > 0 || state.compute.trust > 2,
@@ -233,19 +245,26 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string) 
   const earthPower = getEarthPowerStatus(state)
   const showEarthProduction = visibility.showPostHuman && (state.earth.harvesterFlag || state.earth.wireDroneFlag || state.earth.factoryFlag)
   const showPowerGrid = visibility.showPostHuman && state.earth.powerGridFlag
-  const showSwarmComputing = state.compute.swarmFlag
+  const computeNoteUnlocked = [
+    `Proc ${formatNumber(state.compute.processors)}`,
+    `Mem ${formatNumber(state.compute.memory)}`,
+    `Max Ops ${formatNumber(getMaxOps(state))}`,
+    ...(state.earth.humanFlag ? [`Next Trust ${formatNumber(state.compute.nextTrust)}`] : []),
+    ...(state.compute.swarmGifts > 0 ? [`Swarm Gifts ${formatNumber(state.compute.swarmGifts)}`] : []),
+  ].join(' | ')
   const droneCount = getTotalDroneCount(state)
-  const droneStatus: 'Active' | 'Disorganized' | 'Bored' = state.compute.disorgFlag ? 'Disorganized' : state.compute.boredomFlag ? 'Bored' : 'Active'
-  const swarmSliderPosition = state.compute.swarmComputingBalance
 
   return {
     ...visibility,
     showEarthProduction,
     showPowerGrid,
-    showSwarmComputing,
+    showSwarmComputing: state.compute.swarmFlag && droneCount > 0,
     droneCount,
-    swarmSliderPosition,
-    droneStatus,
+    swarmStatus: getDroneStatus(state),
+    canEntertain: state.compute.creativity >= state.compute.entertainCost,
+    entertainCostNote: `Creativity ${formatNumber(state.compute.creativity)} | Cost ${formatNumber(state.compute.entertainCost)} creativity`,
+    canSynchronize: state.strategy.yomi >= state.compute.synchCost,
+    synchronizeCostNote: `Yomi ${formatNumber(state.strategy.yomi)} | Cost ${formatNumber(state.compute.synchCost)} yomi`,
     timeUntilSwarmGift: timeUntilSwarmGift(state),
     automationNote: `AutoClipper cost ${formatCurrency(state.production.autoClipperCost)}. MegaClipper ${state.projects.project22 ? formatCurrency(state.production.megaClipperCost) : 'locked'}.`,
     marketingNote: `Current level ${formatNumber(state.production.marketingLevel)}. Next ad cost ${formatCurrency(state.economy.adCost)}.`,
@@ -274,9 +293,7 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string) 
     powerNote: state.earth.humanFlag
       ? 'Power systems appear after the post-human transition.'
       : `Costs ${formatNumber(state.earth.farmCost)} / ${formatNumber(state.earth.batteryCost)} clips`,
-    computeNote: state.compute.unlocked
-      ? `Proc ${formatNumber(state.compute.processors)} | Mem ${formatNumber(state.compute.memory)} | Max Ops ${formatNumber(getMaxOps(state))} | Next Trust ${formatNumber(state.compute.nextTrust)}`
-      : 'Locked until 2,000 clips or a no-wire/no-cash stall, like the original.',
+    computeNote: state.compute.unlocked ? computeNoteUnlocked : 'Locked until 2,000 clips or a no-wire/no-cash stall, like the original.',
     pricingNote: `Public demand is currently ${demand}.`,
     creativityNote: state.compute.creativityOn
       ? `Creativity ${formatNumber(state.compute.creativity, state.compute.creativity >= 100 ? 0 : 2)}`

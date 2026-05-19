@@ -122,6 +122,22 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
         />
       ) : null}
 
+      {viewModel.showSwarmComputing ? (
+        <SwarmPanel
+          droneCount={viewModel.droneCount}
+          swarmStatus={viewModel.swarmStatus}
+          timeUntilSwarmGift={viewModel.timeUntilSwarmGift}
+          canEntertain={viewModel.canEntertain}
+          entertainCostNote={viewModel.entertainCostNote}
+          onEntertainSwarm={() => dispatch({ type: 'entertainSwarm' })}
+          canSynchronize={viewModel.canSynchronize}
+          synchronizeCostNote={viewModel.synchronizeCostNote}
+          onSynchronizeSwarm={() => dispatch({ type: 'synchronizeSwarm' })}
+          swarmSliderPosition={state.compute.swarmComputingBalance}
+          onDrag={workThinkBalance => dispatch({ type: 'setSwarmComputingBalance', workThinkBalance })}
+        />
+      ) : null}
+
       <ActionPanel
         title="Pricing"
         description="Adjust sales price in dollars to influence demand."
@@ -155,16 +171,6 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
           primaryTooltip="Switch to the active project list."
           onPrimary={onOpenProjects}
           note={viewModel.creativityNote}
-        />
-      ) : null}
-
-      {viewModel.showSwarmComputing ? (
-        <SwarmPanel
-          droneCount={viewModel.droneCount}
-          onDrag={workThinkBalance => dispatch({ type: 'setSwarmComputingBalance', workThinkBalance })}
-          swarmSliderPosition={viewModel.swarmSliderPosition}
-          timeUntilSwarmGift={viewModel.timeUntilSwarmGift}
-          droneStatus={viewModel.droneStatus}
         />
       ) : null}
 
