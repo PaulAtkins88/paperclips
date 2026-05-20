@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { exportGame, importGame, saveGame } from './application/save/storage'
 import { useGameController } from './application/game/useGameController'
 import {
@@ -25,7 +25,7 @@ const WIRE_SPOOL_BATCHES = [1, 5] as const
 
 function App() {
   const { state, dispatch, tickMs } = useGameController()
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [selectedTab, setSelectedTab] = useState<TabId>('overview')
   const [importValue, setImportValue] = useState('')
   const [copyMessage, setCopyMessage] = useState('')
   const [aboutOpen, setAboutOpen] = useState(false)
@@ -57,6 +57,7 @@ function App() {
 
     return tabs
   }, [activeProjects.length, state.earth.spaceFlag, state.phase, state.projects])
+  const activeTab = visibleTabs.some((tab) => tab.id === selectedTab) ? selectedTab : 'overview'
   const wireBatchCosts = useMemo(
     () =>
       Object.fromEntries(
@@ -72,12 +73,6 @@ function App() {
     expansion: 'Expansion',
   }[state.phase]
 
-  useEffect(() => {
-    if (!visibleTabs.some((tab) => tab.id === activeTab)) {
-      setActiveTab('overview')
-    }
-  }, [activeTab, visibleTabs])
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <AppHeader
@@ -86,7 +81,7 @@ function App() {
         phaseLabel={phaseLabel}
         tabs={visibleTabs}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={setSelectedTab}
         onOpenAbout={() => setAboutOpen(true)}
       />
 
@@ -148,7 +143,7 @@ function App() {
                 dispatch={dispatch}
                 demand={demand}
                 priceInputRef={priceInputRef}
-                onOpenProjects={() => setActiveTab('projects')}
+                onOpenProjects={() => setSelectedTab('projects')}
               />
             ) : null}
 

@@ -172,7 +172,7 @@ function stockShop(state: GameState, random: () => number): GameState {
   const { bankroll, portTotal, portfolioSize, maxPort, riskiness } = state.investment
   let budget = Math.ceil(portTotal / riskiness)
   const reserveFactor = 11 - riskiness
-  let reserves = riskiness === 1 ? 0 : Math.ceil(portTotal / reserveFactor)
+  const reserves = riskiness === 1 ? 0 : Math.ceil(portTotal / reserveFactor)
 
   if (riskiness === 1 && bankroll - budget < reserves && bankroll > portTotal / 10) {
     budget = bankroll
