@@ -16,7 +16,8 @@ export function setSwarmComputingBalance(state: GameState, workThinkBalance: num
     compute: {
       ...state.compute,
       swarmComputingBalance: workThinkBalance,
-    }
+    },
+    lastAction: 'Swarm computing work/think balance adjusted',
   }
 }
 
@@ -144,7 +145,8 @@ export function entertainSwarm(state: GameState): GameState {
       creativity: state.compute.creativity - state.compute.entertainCost,
       entertainCost: state.compute.entertainCost + 10_000,
       boredomFlag: false,
-    }
+    },
+    lastAction: 'Swarm entertained; creativity reduced',
   }
 }
 
@@ -164,5 +166,6 @@ export function synchronizeSwarm(state: GameState): GameState {
       disorgFlag: false,
       disorgCounter: 0,
     },
+    lastAction: 'Swarm synchronized; yomi reduced',
   }
 }
