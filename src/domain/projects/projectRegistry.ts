@@ -633,6 +633,25 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     }),
   },
   {
+    id: 'project40b',
+    title: 'Another Token of Goodwill',
+    description: 'Another small gift to the supervisors. (+1 Trust)',
+    isVisible: (state) => state.projects.project40 && state.compute.trust < 100 && state.earth.humanFlag,
+    canActivate: (state) => state.production.funds >= state.compute.bribe,
+    getCost: (state) => [{ amount: state.compute.bribe, unit: 'dollars' }],
+    repeatable: true,
+    apply: (state) => markProjectComplete(state, 'project40b', {
+      production: {
+        funds: state.production.funds - state.compute.bribe,
+      },
+      compute: {
+        trust: state.compute.trust + 1,
+        bribe: state.compute.bribe * 2,
+      },
+      lastAction: 'Completed another Token of Goodwill',
+    }),
+  },
+  {
     id: 'project11',
     title: 'New Slogan',
     description: 'Boost marketing effectiveness by 50%.',

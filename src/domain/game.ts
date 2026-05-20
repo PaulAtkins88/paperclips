@@ -115,6 +115,7 @@ export interface GameCompute {
   swarmFlag: boolean
   giftBits: number
   giftPeriod: number
+  bribe: number
   swarmGifts: number
   boredomLevel: number
   entertainCost: number
@@ -295,6 +296,7 @@ export const INITIAL_CLIP_PRICE = 0.25
 const INITIAL_MARKETING_LEVEL = 1
 const INITIAL_AD_COST = 100
 const INITIAL_WIRE_SUPPLY = 1_000
+const INITIAL_BRIBE = 1_000_000
 const INITIAL_AVAILABLE_MATTER = Math.pow(10, 24) * 6_000
 const INITIAL_TOTAL_MATTER = 3 * Math.pow(10, 55)
 const INITIAL_FACTORY_COST = 100_000_000
@@ -427,6 +429,7 @@ export function createInitialGameState(): GameState {
       swarmFlag: false,
       giftBits: 0,
       giftPeriod: GIFT_PERIOD,
+      bribe: INITIAL_BRIBE,
       swarmGifts: 0,
       boredomLevel: 0,
       boredomFlag: false,
@@ -895,6 +898,7 @@ export function createInitialProjectFlags(): Record<ProjectId, boolean> {
     project19: false,
     project35: false,
     project40: false,
+    project40b: false,
     project41: false,
     project43: false,
     project44: false,
