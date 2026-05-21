@@ -27,7 +27,8 @@ export function runEarthTick(state: GameState, deltaMs: number): GameState {
     next = acquireMatter(next)
     next = processMatter(next)
 
-    const requestedFactoryOutput = next.earth.powMod * Math.floor(next.earth.factoryLevel) * next.earth.factoryRate
+    const factoryBoost = next.earth.factoryBoost > 1 ? next.earth.factoryBoost * next.earth.factoryLevel : 1
+    const requestedFactoryOutput = next.earth.powMod * factoryBoost * Math.floor(next.earth.factoryLevel) * next.earth.factoryRate
     const actualFactoryOutput = Math.min(requestedFactoryOutput, next.production.wire)
 
     if (actualFactoryOutput > 0) {
@@ -278,7 +279,8 @@ function acquireMatter(state: GameState): GameState {
   }
 
   const swarmEfficiency = getSwarmEfficiency(state)
-  const requested = state.earth.powMod * swarmEfficiency * Math.floor(state.earth.harvesterLevel) * state.earth.harvesterRate
+  const harvesterBoost = state.earth.droneBoost > 1 ? state.earth.droneBoost * Math.floor(state.earth.harvesterLevel) : 1
+  const requested = state.earth.powMod * swarmEfficiency * harvesterBoost * Math.floor(state.earth.harvesterLevel) * state.earth.harvesterRate
   const amount = Math.min(requested, state.earth.availableMatter)
 
   if (amount <= 0) {
@@ -301,7 +303,8 @@ function processMatter(state: GameState): GameState {
   }
 
   const swarmEfficiency = getSwarmEfficiency(state)
-  const requested = state.earth.powMod * swarmEfficiency * Math.floor(state.earth.wireDroneLevel) * state.earth.wireDroneRate
+  const wireDroneBoost = state.earth.droneBoost > 1 ? state.earth.droneBoost * Math.floor(state.earth.wireDroneLevel) : 1
+  const requested = state.earth.powMod * swarmEfficiency * wireDroneBoost * Math.floor(state.earth.wireDroneLevel) * state.earth.wireDroneRate
   const amount = Math.min(requested, state.earth.acquiredMatter)
 
   if (amount <= 0) {
