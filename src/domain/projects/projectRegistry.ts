@@ -1077,6 +1077,23 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
       lastAction: 'Completed Momentum',
     }),
   },
+  {
+    id: 'project128',
+    title: 'Strategic Attachment',
+    description: 'Gain bonus yomi based on the results of your pick.',
+    isVisible: (state) => state.earth.spaceFlag && state.strategy.strategies.length >= 8 && state.space.probeTrustCost > state.strategy.yomi && !state.projects.project128,
+    canActivate: (state) => state.compute.creativity >= 175_000,
+    getCost: () => [{ amount: 175_000, unit: 'creativity' }],
+    apply: (state) => markProjectComplete(state, 'project128', {
+      compute: {
+        creativity: state.compute.creativity - 175_000,
+      },
+      strategy: {
+        strategicAttachmentFlag: true,
+      },
+      lastAction: 'Completed Strategic Attachment',
+    }),
+  },
 ]
 
 export function getProjectDefinition(projectId: ProjectId): ProjectDefinition | undefined {
