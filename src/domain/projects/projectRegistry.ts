@@ -2,7 +2,7 @@ import type { GameState } from '../game'
 import { spendStandardOperations } from '../compute/operations'
 import { getTotalDroneCount } from '../compute/swarm'
 import { syncEarlyEconomyState } from '../economy/earlyEconomy'
-import { formatNumber } from '../game'
+import { createInitialGameState, formatNumber } from '../game'
 import { unlockStrategy } from '../strategy/tournaments'
 import type { ProjectCost, ProjectCostUnit, ProjectDefinition, ProjectId, VisibleProject } from './projectTypes'
 
@@ -319,6 +319,39 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
       { amount: 5 * Math.pow(10, 27), unit: 'clips' },
     ],
     apply: (state) => activateSpaceExploration(spendStandardOperations(state, 120_000)),
+  },
+  {
+    id: 'project50',
+    title: 'Quantum Computing',
+    description: 'Use probability amplitudes to generate bonus ops.',
+    isVisible: (state) => state.compute.processors >= 5 && !state.projects.project50,
+    canActivate: (state) => state.compute.operations >= 10_000,
+    getCost: () => [{ amount: 10_000, unit: 'ops' }],
+    apply: (state) => markProjectComplete(spendStandardOperations(state, 10_000), 'project50', {
+      lastAction: 'Quantum computing online',
+    }),
+  },
+  {
+    id: 'project51',
+    title: 'Photonic Chip',
+    description: 'Converts electromagnetic waves into quantum operations.',
+    isVisible: (state) => state.projects.project50 && state.compute.qChips.some(c => !c.active),
+    canActivate: (state) => state.compute.operations >= state.compute.qChipCost,
+    getCost: (state) => [{ amount: state.compute.qChipCost, unit: 'ops' }],
+    repeatable: true,
+    apply: (state) => {
+      const nextIndex = state.compute.qChips.findIndex(c => !c.active)
+      const updatedChips = state.compute.qChips.map((c, i) =>
+        i === nextIndex ? { ...c, active: true } : c
+      )
+      return markProjectComplete(spendStandardOperations(state, state.compute.qChipCost), 'project51', {
+        compute: {
+          qChips: updatedChips,
+          qChipCost: state.compute.qChipCost + 5_000,
+        },
+        lastAction: 'Photonic chip added',
+      })
+    },
   },
   {
     id: 'project4',
@@ -1076,6 +1109,20 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
       },
       lastAction: 'Completed Momentum',
     }),
+  },
+  {
+    id: 'project217',
+    title: 'Quantum Temporal Reversion',
+    description: 'Return to the beginning.',
+    isVisible: (state) => state.compute.operations <= -10000,
+    canActivate: (state) => state.compute.operations <= -10000,
+    getCost: () => [{ amount: -10_000, unit: 'ops' }],
+    apply: (state) => markProjectComplete(createInitialGameState(), 'project217', {
+      compute: {
+        standardOps: state.compute.standardOps + 10_000,
+      },
+      lastAction: 'Restarted via Quantum Temporal Reversion',
+    })
   },
 ]
 

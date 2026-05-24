@@ -228,7 +228,7 @@ export function selectStatusSidebarViewModel(state: GameState, tickMs: number, c
   }
 }
 
-export function selectIndustryScreenViewModel(state: GameState, demand: string) {
+export function selectIndustryScreenViewModel(state: GameState, demand: string, showQOps: boolean) {
   const visibility = getUiVisibility(state)
   const earthPower = getEarthPowerStatus(state)
   const showEarthProduction = visibility.showPostHuman && (state.earth.harvesterFlag || state.earth.wireDroneFlag || state.earth.factoryFlag)
@@ -241,12 +241,20 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string) 
     ...(state.compute.swarmGifts > 0 ? [`Swarm Gifts ${formatNumber(state.compute.swarmGifts)}`] : []),
   ].join(' | ')
   const droneCount = getTotalDroneCount(state)
+  const showQuantumCompute = state.projects.project50
+  const quantumNote = showQuantumCompute ? [
+    ...(showQOps
+      ? state.compute.qChips.some(c => c.active) ? [`qOps: ${formatNumber(state.compute.qOps)}`] : ['Need photonic chips']
+      : []),
+    `Chips: ${state.compute.qChips.filter(c => c.active).length} / ${state.compute.qChips.length}`,
+  ].join(' | ') : undefined
 
   return {
     ...visibility,
     showEarthProduction,
     showPowerGrid,
     showSwarmComputing: state.compute.swarmFlag && droneCount > 0,
+    showQuantumCompute,
     droneCount,
     swarmStatus: getDroneStatus(state),
     canEntertain: state.compute.creativity >= state.compute.entertainCost,
@@ -254,6 +262,7 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string) 
     canSynchronize: state.strategy.yomi >= state.compute.synchCost,
     synchronizeCostNote: `Yomi ${formatNumber(state.strategy.yomi)} | Cost ${formatNumber(state.compute.synchCost)} yomi`,
     timeUntilSwarmGift: timeUntilSwarmGift(state),
+    quantumNote,
     automationNote: `AutoClipper cost ${formatCurrency(state.production.autoClipperCost)}. MegaClipper ${state.projects.project22 ? formatCurrency(state.production.megaClipperCost) : 'locked'}.`,
     marketingNote: `Current level ${formatNumber(state.production.marketingLevel)}. Next ad cost ${formatCurrency(state.economy.adCost)}.`,
     transitionRows: [

@@ -22,6 +22,7 @@ import {
   INITIAL_TRUST,
 } from './compute/trust'
 import { getMaxOperations, OP_FADE_DELAY } from './compute/operations'
+import { createInitialQChips, QCHIP_BASE_COST, quantumCompute, type QChip } from './compute/quantum'
 import { applyManualClipProduction, applyWirePurchaseToEconomy, runEarlyEconomyTick, syncEarlyEconomyState } from './economy/earlyEconomy'
 import {
   cycleInvestmentRiskMode,
@@ -109,6 +110,10 @@ export interface GameCompute {
   creativityOn: boolean
   creativitySpeed: number
   creativityCounter: number
+  qChips: QChip[]
+  qChipCost: number
+  qClock: number
+  qOps: number
   opFade: number
   opFadeTimer: number
   opFadeDelay: number
@@ -362,6 +367,7 @@ export type GameAction =
   | { type: 'addProcessor' }
   | { type: 'addMemory' }
   | { type: 'unlockCreativity' }
+  | { type: 'quantumCompute' }
   | { type: 'setPrice'; price: number }
   | { type: 'completeProject'; projectId: ProjectId }
   | { type: 'togglePause' }
@@ -421,6 +427,10 @@ export function createInitialGameState(): GameState {
       creativityOn: false,
       creativitySpeed: INITIAL_CREATIVITY_SPEED,
       creativityCounter: 0,
+      qChips: createInitialQChips(),
+      qChipCost: QCHIP_BASE_COST,
+      qClock: 0,
+      qOps: 0,
       opFade: 0,
       opFadeTimer: 0,
       opFadeDelay: OP_FADE_DELAY,
@@ -620,6 +630,8 @@ export function reduceGameState(state: GameState, action: GameAction): GameState
       return addMemory(syncComputeState(state))
     case 'unlockCreativity':
       return unlockCreativity(syncComputeState(state))
+    case 'quantumCompute':
+      return quantumCompute(syncComputeState(state))
     case 'setPrice':
       return setPrice(state, action.price)
     case 'completeProject':
@@ -873,6 +885,8 @@ export function createInitialProjectFlags(): Record<ProjectId, boolean> {
     project38: false,
     project4: false,
     project5: false,
+    project50: false,
+    project51: false,
     project6: false,
     project60: false,
     project61: false,
@@ -923,6 +937,7 @@ export function createInitialProjectFlags(): Record<ProjectId, boolean> {
     project134: false,
     project131: false,
     project127: false,
+    project217: false,
     project219: false,
     project34: false,
   }

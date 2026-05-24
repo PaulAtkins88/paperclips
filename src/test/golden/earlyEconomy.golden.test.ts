@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { addMemory, addProcessor, runComputeTick, unlockCreativity } from '../../domain/compute/compute'
 import { calculateCreativity } from '../../domain/compute/creativity'
-import { OP_FADE_ACCELERATION } from '../../domain/compute/operations'
+import { calculateOperations, getMaxOperations, OP_FADE_ACCELERATION, OP_FADE_DELAY } from '../../domain/compute/operations'
 import { canAllocateTrust, shouldUnlockCompute } from '../../domain/compute/trust'
+import { createInitialQChips, quantumCompute } from '../../domain/compute/quantum'
 import { computeAutoClipperCost, computeMegaClipperCost } from '../../domain/economy/clippers'
 import { applyManualClipProduction, applyWirePurchaseToEconomy, runEarlyEconomyTick, syncEarlyEconomyState } from '../../domain/economy/earlyEconomy'
 import { cycleInvestmentRiskMode, investDeposit, investUpgrade, investWithdraw, runInvestmentTick } from '../../domain/investments/investments'
@@ -169,6 +170,96 @@ describe('early economy parity', () => {
 
     expect(next.compute.operations).toBe(0)
     expect(next.compute.standardOps).toBeCloseTo(0.2, 10)
+  })
+
+  it('accumulates quantum ops from all active chips using original sine wave formula', () => {
+    const initialGameState = createInitialGameState()
+    for (const qClock of [1.0, 5.0, 30.0]) {
+      const state = {
+        ...initialGameState,
+        projects: {
+          ...initialGameState.projects,
+          project50: true,
+        },
+        compute: {
+          ...initialGameState.compute,
+          qClock,
+          qChips: createInitialQChips().map(chip => ({ ...chip, active: true, value: Math.sin(qClock * chip.waveSeed) })),
+          memory: 10,
+          standardOps: 0,
+          tempOps: 0,
+        },
+      }
+
+      const afterOps = quantumCompute(state)
+
+      const expectedQ = state.compute.qChips.reduce((sum, chip) => sum + chip.value, 0)
+      const expectedQQ = Math.ceil(expectedQ * 360)
+
+      expect(afterOps.compute.qOps).toBe(expectedQQ)
+      expect(afterOps.compute.standardOps).toBe(expectedQQ)
+    }
+  })
+
+  it('routes excess quantum ops into temp ops when standard ops would exceed memory ceiling', () => {
+    const memory = 10
+    const maxOps = getMaxOperations(memory)
+    const standardOps = maxOps - 1
+
+    const state = {
+      ...createInitialGameState(),
+      projects: {
+        ...createInitialGameState().projects,
+        project50: true,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        qClock: 1.0,
+        qChips: createInitialQChips().map(chip => ({ ...chip, active: true, value: Math.sin(chip.waveSeed) })),
+        memory,
+        standardOps,
+        tempOps: 0,
+      },
+    }
+
+    const afterOps = quantumCompute(state)
+
+    const q = state.compute.qChips.reduce((sum, chip) => sum + chip.value, 0)
+    const qq = Math.ceil(q * 360)
+    const buffer = maxOps - standardOps
+    const damper = (0 / 100) + 5
+
+    expect(afterOps.compute.standardOps).toBe(maxOps)
+    expect(afterOps.compute.tempOps).toBe(Math.ceil(qq / damper) - buffer)
+  })
+
+  it('resets temp ops decay after a quantum compute overflow so that fade begins at the original delay', () => {
+    const memory = 10
+    const maxOps = memory * 1000
+    const standardOps = maxOps - 1
+
+    const state = {
+      ...createInitialGameState(),
+      projects: {
+        ...createInitialGameState().projects,
+        project50: true,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        qClock: 1.0,
+        qChips: createInitialQChips().map(chip => ({ ...chip, active: true, value: Math.sin(chip.waveSeed) })),
+        memory,
+        standardOps,
+        tempOps: 0,
+        opFade: 5,
+        opFadeTimer: OP_FADE_DELAY + 100,
+      },
+    }
+
+    const afterClick = quantumCompute(state)
+    const afterTick = calculateOperations(afterClick)
+
+    expect(afterTick.compute.tempOps).toBe(Math.round(afterClick.compute.tempOps - 0.01))
   })
 
   it('starts temp ops fade only after the original delay and acceleration constant', () => {
