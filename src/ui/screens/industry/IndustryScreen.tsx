@@ -70,11 +70,20 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
             <Button disabled={state.earth.humanFlag || !state.earth.harvesterFlag || state.production.unusedClips < state.earth.harvesterCost} onClick={() => dispatch({ type: 'buyHarvester' })} type="button">
               Buy harvester
             </Button>
-            <Button disabled={state.earth.humanFlag || !state.earth.wireDroneFlag || state.production.unusedClips < state.earth.wireDroneCost} onClick={() => dispatch({ type: 'buyWireDrone' })} type="button" variant="secondary">
+            <Button disabled={state.earth.humanFlag || !state.earth.harvesterFlag || state.earth.harvesterLevel === 0} onClick={() => dispatch({ type: 'rebootHarvesters' })} variant="secondary" tooltip={`Regain ${formatNumber(state.earth.harvesterBill)} clips`} type="button">
+              Disassemble all harvesters
+            </Button>
+            <Button disabled={state.earth.humanFlag || !state.earth.wireDroneFlag || state.production.unusedClips < state.earth.wireDroneCost} onClick={() => dispatch({ type: 'buyWireDrone' })} type="button">
               Buy wire drone
+            </Button>
+            <Button disabled={state.earth.humanFlag || !state.earth.wireDroneFlag || state.earth.wireDroneLevel === 0} onClick={() => dispatch({ type: 'rebootWireDrones' })} variant="secondary" tooltip={`Regain ${formatNumber(state.earth.wireDroneBill)} clips`} type="button">
+              Disassemble all wire drones
             </Button>
             <Button disabled={state.earth.humanFlag || !state.earth.factoryFlag || state.production.unusedClips < state.earth.factoryCost} onClick={() => dispatch({ type: 'buyFactory' })} type="button">
               Buy factory
+            </Button>
+            <Button disabled={state.earth.humanFlag || !state.earth.factoryFlag || state.earth.factoryLevel === 0} onClick={() => dispatch({ type: 'rebootFactories' })} variant="secondary" tooltip={`Regain ${formatNumber(state.earth.factoryBill)} clips`} type="button">
+              Disassemble all factories
             </Button>
           </div>
           <p className="mt-3 text-xs uppercase tracking-[0.2em] text-slate-500">{viewModel.earthProductionNote}</p>
@@ -92,8 +101,14 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
             <Button disabled={state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < state.earth.farmCost} onClick={() => dispatch({ type: 'buyFarm' })} type="button">
               Buy solar farm
             </Button>
-            <Button disabled={state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < state.earth.batteryCost} onClick={() => dispatch({ type: 'buyBattery' })} type="button" variant="secondary">
+            <Button disabled={state.earth.humanFlag || !state.earth.powerGridFlag || state.earth.farmLevel === 0} onClick={() => dispatch({ type: 'rebootFarms' })} variant="secondary" tooltip={`Regain ${formatNumber(state.earth.farmBill)} clips`} type="button">
+              Disassemble all solar farms
+            </Button>
+            <Button disabled={state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < state.earth.batteryCost} onClick={() => dispatch({ type: 'buyBattery' })} type="button">
               Buy battery tower
+            </Button>
+            <Button disabled={state.earth.humanFlag || !state.earth.powerGridFlag || state.earth.batteryLevel === 0} onClick={() => dispatch({ type: 'rebootBatteries' })} variant="secondary" tooltip={`Regain ${formatNumber(state.earth.batteryBill)} clips`} type="button">
+              Disassemble all battery towers
             </Button>
           </div>
           <div className="mt-3 grid gap-1.5 text-sm text-slate-300">
