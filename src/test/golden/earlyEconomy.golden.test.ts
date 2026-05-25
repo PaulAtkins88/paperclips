@@ -12,7 +12,7 @@ import { computeSaleQuantity, shouldSell, truncateCurrency } from '../../domain/
 import { createInitialGameState } from '../../domain/game'
 import { activateProject, canActivateProject, getVisibleProjects } from '../../domain/projects/projectRegistry'
 import {
-  assignProbeTrust,
+  allocateProbeTrust,
   getSpaceStatus,
   increaseMaxTrust,
   increaseProbeTrust,
@@ -992,8 +992,8 @@ describe('early economy parity', () => {
 
     const noStats = runSpaceExplorationTick(state, 100)
     const withTrust = increaseProbeTrust(increaseProbeTrust(state))
-    const speedOnly = runSpaceExplorationTick(assignProbeTrust(withTrust, 'speed'), 100)
-    const fullyAllocated = assignProbeTrust(assignProbeTrust(withTrust, 'speed'), 'nav')
+    const speedOnly = runSpaceExplorationTick(allocateProbeTrust(withTrust, 'speed'), 100)
+    const fullyAllocated = allocateProbeTrust(allocateProbeTrust(withTrust, 'speed'), 'nav')
     const allocatedStatus = getSpaceStatus(fullyAllocated)
     const exploring = runSpaceExplorationTick(fullyAllocated, 100)
 
@@ -1367,8 +1367,8 @@ describe('early economy parity', () => {
       },
     }
 
-    const locked = assignProbeTrust(base, 'combat')
-    const unlocked = assignProbeTrust({
+    const locked = allocateProbeTrust(base, 'combat')
+    const unlocked = allocateProbeTrust({
       ...base,
       projects: {
         ...base.projects,

@@ -39,7 +39,7 @@ export function CombatScreen({ state, dispatch }: CombatScreenProps) {
         <div className="mt-3 flex flex-wrap gap-2">
           <Button
             disabled={!viewModel.combatUnlocked || viewModel.availableProbeTrust <= 0}
-            onClick={() => dispatch({ type: 'assignProbeTrust', target: 'combat' })}
+            onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'combat' })}
             type="button"
             variant="secondary"
           >

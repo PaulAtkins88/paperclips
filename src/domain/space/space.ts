@@ -24,7 +24,7 @@ const BATTLE_SHIP_CAP = 200
 const SPACE_FACTORY_COST = 100_000_000
 const SPACE_DRONE_COST = 2_000_000
 
-type ProbeTrustTarget = 'speed' | 'nav' | 'rep' | 'haz' | 'fac' | 'harv' | 'wire' | 'combat'
+export type ProbeTrustTarget = 'speed' | 'nav' | 'rep' | 'haz' | 'fac' | 'harv' | 'wire' | 'combat'
 
 export interface SpaceStatus {
   explorationRate: number
@@ -138,34 +138,28 @@ export function increaseMaxTrust(state: GameState): GameState {
   }
 }
 
-export function assignProbeTrust(state: GameState, target: ProbeTrustTarget): GameState {
-  if (!state.earth.spaceFlag || state.space.probeUsedTrust >= state.space.probeTrust) {
+export function allocateProbeTrust(state: GameState, target: ProbeTrustTarget): GameState {
+  if (!state.earth.spaceFlag || state.space.probeUsedTrust >= state.space.probeTrust || (target === 'combat' && !state.projects.project131)) {
     return state
   }
+  return applyProbeTrustAllocation(state, target, 1)
+}
 
-  switch (target) {
-    case 'speed':
-      return applyProbeTrustAllocation(state, { probeSpeed: state.space.probeSpeed + 1 }, 'Allocated probe trust to Speed')
-    case 'nav':
-      return applyProbeTrustAllocation(state, { probeNav: state.space.probeNav + 1 }, 'Allocated probe trust to Exploration')
-    case 'rep':
-      return applyProbeTrustAllocation(state, { probeRep: state.space.probeRep + 1 }, 'Allocated probe trust to Self-Replication')
-    case 'haz':
-      return applyProbeTrustAllocation(state, { probeHaz: state.space.probeHaz + 1 }, 'Allocated probe trust to Hazard Remediation')
-    case 'fac':
-      return applyProbeTrustAllocation(state, { probeFac: state.space.probeFac + 1 }, 'Allocated probe trust to Factory Production')
-    case 'harv':
-      return applyProbeTrustAllocation(state, { probeHarv: state.space.probeHarv + 1 }, 'Allocated probe trust to Harvester Production')
-    case 'wire':
-      return applyProbeTrustAllocation(state, { probeWire: state.space.probeWire + 1 }, 'Allocated probe trust to Wire Drone Production')
-    case 'combat':
-      if (!state.projects.project131) {
-        return state
-      }
-      return applyProbeTrustAllocation(state, { probeCombat: state.space.probeCombat + 1 }, 'Allocated probe trust to Combat')
-    default:
-      return state
+export function deallocateProbeTrust(state: GameState, target: ProbeTrustTarget): GameState {
+  const currentTargetTrust = {
+    speed: state.space.probeSpeed,
+    nav: state.space.probeNav,
+    rep: state.space.probeRep,
+    haz: state.space.probeHaz,
+    fac: state.space.probeFac,
+    harv: state.space.probeHarv,
+    wire: state.space.probeWire,
+    combat: state.space.probeCombat,
+  }[target]
+  if (!state.earth.spaceFlag || currentTargetTrust === 0 || (target === 'combat' && !state.projects.project131)) {
+    return state
   }
+  return applyProbeTrustAllocation(state, target, -1)
 }
 
 export function getSpaceStatus(state: GameState): SpaceStatus {
@@ -659,19 +653,39 @@ function capClipFundedSpawn(amount: number, unitCost: number, unusedClips: numbe
   return amount
 }
 
-function applyProbeTrustAllocation(
-  state: GameState,
-  patch: Partial<GameState['space']>,
-  lastAction: string,
-): GameState {
+function applyProbeTrustAllocation(state: GameState, target: ProbeTrustTarget, delta: 1 | -1): GameState {
+  const field: keyof GameState['space'] = {
+    speed: 'probeSpeed' as const,
+    nav: 'probeNav' as const,
+    rep: 'probeRep' as const,
+    haz: 'probeHaz' as const,
+    fac: 'probeFac' as const,
+    harv: 'probeHarv' as const,
+    wire: 'probeWire' as const,
+    combat: 'probeCombat' as const,
+  }[target]
+
+  const label = {
+    speed:   'Exploration',
+    nav:     'Navigation',
+    rep:     'Replication',
+    haz:     'Hazard Remediation',
+    fac:     'Factory Production',
+    harv:    'Harvesting',
+    wire:    'Wire Production',
+    combat:  'Combat',
+  }[target]
+
+  const action = delta === 1 ? `Allocated probe trust to` : `Deallocated probe trust from`
+
   return {
     ...state,
     space: {
       ...state.space,
-      ...patch,
-      probeUsedTrust: state.space.probeUsedTrust + 1,
+      probeUsedTrust: state.space.probeUsedTrust + delta,
+      [field]: (state.space[field] as number) + delta,
     },
-    lastAction,
+    lastAction: `${action} ${label}`,
   }
 }
 

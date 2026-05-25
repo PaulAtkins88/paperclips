@@ -38,12 +38,14 @@ import {
 import { computeDemand as computeDemandRule, normalizeClipPrice } from './economy/pricing'
 import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, runEarthTick } from './earth/earth'
 import {
-  assignProbeTrust,
+  allocateProbeTrust,
+  deallocateProbeTrust,
   increaseMaxTrust,
   increaseProbeTrust,
   launchProbe,
   runSpaceColonizationTick,
   runSpaceExplorationTick,
+  type ProbeTrustTarget,
 } from './space/space'
 import { createInitialWireMarket } from './economy/wireMarket'
 import { activateProject, canActivateProject, countCompletedProjects, countTotalProjects, getVisibleProjects } from './projects/projectRegistry'
@@ -348,7 +350,8 @@ export type GameAction =
   | { type: 'launchProbe' }
   | { type: 'increaseProbeTrust' }
   | { type: 'increaseMaxTrust' }
-  | { type: 'assignProbeTrust'; target: 'speed' | 'nav' | 'rep' | 'haz' | 'fac' | 'harv' | 'wire' | 'combat' }
+  | { type: 'allocateProbeTrust'; target: ProbeTrustTarget }
+  | { type: 'deallocateProbeTrust'; target: ProbeTrustTarget }
   | { type: 'buyMarketing' }
   | { type: 'buyAutoClipper' }
   | { type: 'buyMegaClipper' }
@@ -592,8 +595,10 @@ export function reduceGameState(state: GameState, action: GameAction): GameState
       return increaseProbeTrust(state)
     case 'increaseMaxTrust':
       return increaseMaxTrust(state)
-    case 'assignProbeTrust':
-      return assignProbeTrust(state, action.target)
+    case 'allocateProbeTrust':
+      return allocateProbeTrust(state, action.target)
+    case 'deallocateProbeTrust':
+      return deallocateProbeTrust(state, action.target)
     case 'buyMarketing':
       return buyMarketing(state)
     case 'buyAutoClipper':
