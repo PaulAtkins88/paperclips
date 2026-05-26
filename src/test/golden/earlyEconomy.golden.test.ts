@@ -920,6 +920,51 @@ describe('early economy parity', () => {
     expect(next.production.clips).toBe(5)
   })
 
+  it('freezes powMod at space phase entry and does not decay it as probes scale up', () => {
+      const state = {
+        ...createInitialGameState(),
+        production: {
+          ...createInitialGameState().production,
+          unusedClips: 1e28,
+        },
+        earth: {
+          ...createInitialGameState().earth,
+          phase: 'postHuman' as const,
+          humanFlag: false,
+          spaceFlag: true,
+          powerGridFlag: true,
+          wireProductionFlag: true,
+          harvesterFlag: true,
+          wireDroneFlag: true,
+          factoryFlag: true,
+          powMod: 1,
+          storedPower: 0,
+          farmLevel: 1,
+          batteryLevel: 0,
+          factoryLevel: 0,
+          harvesterLevel: 0,
+          wireDroneLevel: 0,
+          availableMatter: 1e28,
+        },
+        space: {
+          ...createInitialGameState().space,
+          probeCount: 1_000_000,
+          probeHaz: 5,
+          probeFac: 5,
+          probeHarv: 5,
+          probeWire: 5,
+        },
+      }
+
+      const next = runSpaceTick(state, 100)
+
+      expect(next.earth.factoryLevel).toBeGreaterThan(0)
+      expect(next.earth.harvesterLevel).toBeGreaterThan(0)
+      expect(next.earth.wireDroneLevel).toBeGreaterThan(0)
+
+      expect(next.earth.powMod).toBe(1)
+    })
+
   it('launches probes only above the fixed clip cost threshold', () => {
     const probeCost = Math.pow(10, 17)
     const fundedRemainder = 128
