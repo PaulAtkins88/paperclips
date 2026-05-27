@@ -67,7 +67,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project21',
     title: 'Algorithmic Trading',
     description: 'Unlock the investment engine once trust reaches 8.',
-    isVisible: (state) => state.compute.trust >= 8 && !state.projects.project21,
+    isVisible: (state) => (state.compute.trust >= 8 || state.projects.project35) && !state.projects.project21,
     canActivate: (state) => state.compute.operations >= 10_000,
     getCost: () => [{ amount: 10_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 10_000), 'project21', {
@@ -701,7 +701,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project118',
     title: 'AutoTourney',
     description: 'Automatically rerun tournaments once results are available.',
-    isVisible: (state) => state.strategy.unlocked && state.compute.trust >= 90 && !state.projects.project118,
+    isVisible: (state) => state.strategy.unlocked && (state.compute.trust >= 90 || state.projects.project35) && !state.projects.project118,
     canActivate: (state) => state.compute.creativity >= 50_000,
     getCost: () => [{ amount: 50_000, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project118', {
