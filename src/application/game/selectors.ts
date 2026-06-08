@@ -12,7 +12,7 @@ import {
 } from '../../domain/game'
 import { getEarthPowerStatus } from '../../domain/earth/earth'
 import { getSpaceStatus } from '../../domain/space/space'
-import { getTotalDroneCount, timeUntilSwarmGift } from '../../domain/compute/swarm'
+import { getDroneStatus, getTotalDroneCount, timeUntilSwarmGift } from '../../domain/compute/swarm'
 
 export interface InfoRowViewModel {
   label: string
@@ -22,18 +22,6 @@ export interface InfoRowViewModel {
 export interface StatChipViewModel {
   label: string
   value: string
-}
-
-export type SwarmStatus = 'Sleeping' | 'No response' | 'No drones' | 'Lonely' | 'Active' | 'Bored' | 'Disorganized'
-
-function getDroneStatus(state: GameState): SwarmStatus {
-  if (state.compute.disorgFlag) return 'Disorganized'
-  if (state.compute.boredomFlag) return 'Bored'
-  if (getTotalDroneCount(state) === 1) return 'Lonely'
-  if (getTotalDroneCount(state) === 0) return 'No drones'
-  if (state.earth.spaceFlag && !state.projects.project130) return 'No response'
-  if (state.earth.powMod === 0 || !state.compute.swarmFlag) return 'Sleeping'
-  return 'Active'
 }
 
 function getUiVisibility(state: GameState) {

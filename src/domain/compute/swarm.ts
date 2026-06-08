@@ -6,6 +6,8 @@ export const SYNCHRONIZATION_COST = 5_000
 export const INITIAL_ENTERTAIN_COST = 10_000
 const BOREDOM_THRESHOLD = (5 * 60 * 1000) / COMPUTE_TICK_MS
 
+export type SwarmStatus = 'Sleeping' | 'No response' | 'No drones' | 'Lonely' | 'Active' | 'Bored' | 'Disorganized'
+
 export function setSwarmComputingBalance(state: GameState, workThinkBalance: number): GameState {
   if (!state.compute.swarmFlag || workThinkBalance < 0 || workThinkBalance > 100) {
     return state
@@ -23,6 +25,10 @@ export function setSwarmComputingBalance(state: GameState, workThinkBalance: num
 
 export function getTotalDroneCount(state: GameState): number {
   return state.earth.harvesterLevel + state.earth.wireDroneLevel
+}
+
+export function getSwarmEfficiency(state: GameState): number {
+  return (100 - state.compute.swarmComputingBalance) / 100
 }
 
 function isSwarmActive(state: GameState): boolean {
@@ -111,6 +117,17 @@ function updateDisorg(state: GameState): GameState {
     },
   }
 }
+
+export function getDroneStatus(state: GameState): SwarmStatus {
+  if (state.compute.disorgFlag) return 'Disorganized'
+  if (state.compute.boredomFlag) return 'Bored'
+  if (getTotalDroneCount(state) === 1) return 'Lonely'
+  if (getTotalDroneCount(state) === 0) return 'No drones'
+  if (state.earth.spaceFlag && !state.projects.project130) return 'No response'
+  if (state.earth.powMod === 0 || !state.compute.swarmFlag) return 'Sleeping'
+  return 'Active'
+}
+
 export function timeUntilSwarmGift(state: GameState): string | null {
   if (!isSwarmActive(state)) return null
 

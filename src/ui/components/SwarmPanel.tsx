@@ -1,6 +1,6 @@
 import { Button, InfoRow, SectionCard } from '../system'
 import { formatNumber } from '../../domain/game'
-import type { SwarmStatus } from '../../application/game/selectors'
+import type { SwarmStatus } from '../../domain/compute/swarm'
 
 interface SwarmPanelProps {
   droneCount: number

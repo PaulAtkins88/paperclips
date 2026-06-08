@@ -1,5 +1,6 @@
 import type { GameState } from '../game'
 import { spendStandardOperations } from '../compute/operations'
+import { getTotalDroneCount } from '../compute/swarm'
 import { syncEarlyEconomyState } from '../economy/earlyEconomy'
 import { formatNumber } from '../game'
 import { unlockStrategy } from '../strategy/tournaments'
@@ -655,7 +656,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project126',
     title: 'Swarm Computing',
     description: 'Harness the drone flock to increase computational capacity',
-    isVisible: (state) => state.earth.harvesterLevel + state.earth.wireDroneLevel >= 200 && !state.projects.project126,
+    isVisible: (state) => getTotalDroneCount(state) >= 200 && !state.projects.project126,
     canActivate: (state) => state.strategy.yomi >= 36_000,
     getCost: () => [{ amount: 36_000, unit: 'yomi' }],
     apply: (state) => markProjectComplete(state, 'project126', {
@@ -672,7 +673,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project130',
     title: 'Reboot the Swarm',
     description: 'Turn the swarm off and then turn it back on again.',
-    isVisible: (state) => state.earth.spaceFlag && state.earth.harvesterLevel + state.earth.wireDroneLevel >= 2 && !state.projects.project130,
+    isVisible: (state) => state.earth.spaceFlag && getTotalDroneCount(state) >= 2 && !state.projects.project130,
     canActivate: (state) => state.compute.operations >= 100_000,
     getCost: () => [{ amount: 100_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 100_000), 'project130', {
