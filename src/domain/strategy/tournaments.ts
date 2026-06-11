@@ -17,30 +17,46 @@ export interface TournamentResult {
 }
 
 const STRATEGY_TICK_MS = 10
+const TOURNAMENT_ROUND_DURATION_MS = 1_000
 
 export const ALL_STRATEGIES: StrategyId[] = ['RANDOM', 'A100', 'B100', 'GREEDY', 'GENEROUS', 'MINIMAX', 'TIT_FOR_TAT', 'BEAT_LAST']
 
 export function runStrategyTick(state: GameState, deltaMs: number, random: () => number): GameState {
-  if (state.paused || !state.strategy.unlocked || !state.strategy.autoTourneyEnabled || state.strategy.lastResults.length === 0) {
+  if (state.paused || !state.strategy.unlocked) {
     return state
   }
 
   let next = state
+  if (next.strategy.tourneyStarted) {
+    const tourneyElapsedMs = next.strategy.tourneyElapsedMs + deltaMs
+    const totalDuration = getTournamentTotalRounds(next) * TOURNAMENT_ROUND_DURATION_MS
+
+    if (tourneyElapsedMs >= totalDuration) {
+      next = computeTournamentResults(next, random)
+    } else {
+      next = {
+        ...next,
+        strategy: {
+          ...next.strategy,
+          tourneyElapsedMs,
+        },
+      }
+    }
+
+    return next
+  }
+
+  if (!state.strategy.autoTourneyEnabled || state.strategy.lastResults.length === 0) {
+    return next
+  }
+
   let resultsTimer = next.strategy.resultsTimer
   const ticks = Math.max(1, Math.floor(deltaMs / STRATEGY_TICK_MS))
 
   for (let index = 0; index < ticks; index += 1) {
     resultsTimer += 1
-
     if (resultsTimer >= 300 && next.compute.operations >= next.strategy.tourneyCost) {
-      next = runTournament({
-        ...next,
-        strategy: {
-          ...next.strategy,
-          resultsTimer: 0,
-        },
-      }, random)
-
+      next = runTournament(createNewTournament(next, random))
       resultsTimer = next.strategy.resultsTimer
     }
   }
@@ -54,78 +70,58 @@ export function runStrategyTick(state: GameState, deltaMs: number, random: () =>
   }
 }
 
-export function canRunTournament(state: GameState): boolean {
-  return state.strategy.unlocked && state.compute.operations >= state.strategy.tourneyCost
+export function canCreateTournament(state: GameState): boolean {
+  return state.strategy.unlocked && state.compute.operations >= state.strategy.tourneyCost && !state.strategy.tourneyInProgress
 }
 
-export function runTournament(state: GameState, random: () => number): GameState {
-  if (!canRunTournament(state)) {
+export function createNewTournament(state: GameState, random: () => number): GameState {
+  if (!canCreateTournament(state)) {
     return state
   }
 
   const spent = spendStandardOperations(state, state.strategy.tourneyCost)
   const matrix = generatePayoffMatrix(random)
-  const strategyIds = spent.strategy.strategies
-  const scores = new Map<StrategyId, number>(strategyIds.map((id) => [id, 0]))
-  let hMovePrev = spent.strategy.hMovePrev
-  let vMovePrev = spent.strategy.vMovePrev
-
-  for (const rowId of strategyIds) {
-    for (const colId of strategyIds) {
-      for (let round = 0; round < 10; round += 1) {
-        const rowMove = pickMove(rowId, matrix, hMovePrev, vMovePrev, random, true)
-        const colMove = pickMove(colId, matrix, hMovePrev, vMovePrev, random, false)
-
-        const payoff = getPayoff(matrix, rowMove, colMove)
-        scores.set(rowId, (scores.get(rowId) ?? 0) + payoff.row)
-        scores.set(colId, (scores.get(colId) ?? 0) + payoff.col)
-
-        hMovePrev = rowMove
-        vMovePrev = colMove
-      }
-    }
-  }
-
-  const results = strategyIds
-    .map((id) => ({ id, score: scores.get(id) ?? 0 }))
-    .sort((left, right) => right.score - left.score)
-
-  let yomi = spent.strategy.yomi
-
-  if (spent.strategy.selectedStrategy !== 'NONE') {
-    const rankIndex = results.findIndex((result) => result.id === spent.strategy.selectedStrategy)
-
-    if (rankIndex >= 0) {
-      const selectedScore = results[rankIndex].score
-      const beatBoost = Math.max(1, results.length - rankIndex - 1)
-      yomi += selectedScore * spent.strategy.yomiBoost * beatBoost
-
-      if (spent.strategy.strategicAttachmentFlag) {
-        const winScore = results[0]?.score ?? -1
-        const placeScore = results.find((r) => r.score < winScore)?.score ?? -1
-        const showScore = results.find((r) => r.score < placeScore)?.score ?? -1
-
-        if (selectedScore === winScore) yomi += 50_000
-        else if (placeScore >= 0 && selectedScore === placeScore) yomi += 30_000
-        else if (showScore >= 0 && selectedScore === showScore) yomi += 20_000
-      }
-    }
-  }
 
   return {
     ...spent,
     strategy: {
       ...spent.strategy,
-      yomi,
-      tourneyLevel: spent.strategy.tourneyLevel + 1,
-      lastResults: results,
-      lastPayoffMatrix: matrix,
-      hMovePrev,
-      vMovePrev,
+      tourneyInProgress: true,
+      tourneyLevel: state.strategy.tourneyLevel + 1,
+      lastResults: [],
       resultsTimer: 0,
+      lastPayoffMatrix: matrix,
+    },
+    lastAction: 'Created a new tournament',
+  }
+}
+
+export function canRunTournament(state: GameState): boolean {
+  return state.strategy.unlocked && state.strategy.tourneyInProgress && !state.strategy.tourneyStarted
+}
+
+export function runTournament(state: GameState): GameState {
+  if (!canRunTournament(state)) {
+    return state
+  }
+
+  return {
+    ...state,
+    strategy: {
+      ...state.strategy,
+      tourneyStarted: true,
+      tourneyElapsedMs: 0,
     },
     lastAction: 'Ran a tournament',
   }
+}
+
+export function getTournamentRoundNumber(state: GameState): number {
+  return Math.floor(state.strategy.tourneyElapsedMs / TOURNAMENT_ROUND_DURATION_MS) + 1
+}
+
+export function getTournamentTotalRounds(state: GameState): number {
+  return Math.pow(state.strategy.strategies.length, 2)
 }
 
 export function cycleStrategySelection(state: GameState): GameState {
@@ -183,6 +179,68 @@ export function formatStrategyLabel(strategyId: StrategySelection): string {
       return 'BEAT LAST'
     default:
       return strategyId
+  }
+}
+
+function computeTournamentResults(state: GameState, random: () => number): GameState {
+  const matrix = state.strategy.lastPayoffMatrix!
+  const strategyIds = state.strategy.strategies
+  const scores = new Map<StrategyId, number>(strategyIds.map((id) => [id, 0]))
+  let hMovePrev = state.strategy.hMovePrev
+  let vMovePrev = state.strategy.vMovePrev
+
+  for (const rowId of strategyIds) {
+    for (const colId of strategyIds) {
+      for (let round = 0; round < 10; round += 1) {
+        const rowMove = pickMove(rowId, matrix, hMovePrev, vMovePrev, random, true)
+        const colMove = pickMove(colId, matrix, hMovePrev, vMovePrev, random, false)
+        const payoff = getPayoff(matrix, rowMove, colMove)
+        scores.set(rowId, (scores.get(rowId) ?? 0) + payoff.row)
+        scores.set(colId, (scores.get(colId) ?? 0) + payoff.col)
+        hMovePrev = rowMove
+        vMovePrev = colMove
+      }
+    }
+  }
+
+  const results = strategyIds
+    .map((id) => ({ id, score: scores.get(id) ?? 0 }))
+    .sort((left, right) => right.score - left.score)
+
+  let yomi = state.strategy.yomi
+
+  if (state.strategy.selectedStrategy !== 'NONE') {
+    const rankIndex = results.findIndex((result) => result.id === state.strategy.selectedStrategy)
+
+    if (rankIndex >= 0) {
+      const selectedScore = results[rankIndex].score
+      const beatBoost = Math.max(1, results.length - rankIndex - 1)
+      yomi += selectedScore * state.strategy.yomiBoost * beatBoost
+
+      if (state.strategy.strategicAttachmentFlag) {
+        const winScore = results[0]?.score ?? -1
+        const placeScore = results.find((r) => r.score < winScore)?.score ?? -1
+        const showScore = results.find((r) => r.score < placeScore)?.score ?? -1
+
+        if (selectedScore === winScore) yomi += 50_000
+        else if (placeScore >= 0 && selectedScore === placeScore) yomi += 30_000
+        else if (showScore >= 0 && selectedScore === showScore) yomi += 20_000
+      }
+    }
+  }
+
+  return {
+    ...state,
+    strategy: {
+      ...state.strategy,
+      tourneyInProgress: false,
+      tourneyStarted: false,
+      tourneyElapsedMs: 0,
+      yomi,
+      lastResults: results,
+      hMovePrev,
+      vMovePrev,
+    },
   }
 }
 

@@ -10,7 +10,7 @@ import { cycleInvestmentRiskMode, investDeposit, investUpgrade, investWithdraw, 
 import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, EARTH_TICK_MS, getEarthPowerStatus, rebootBatteries, rebootFactories, rebootFarms, rebootHarvesters, rebootWireDrones, runEarthTick } from '../../domain/earth/earth'
 import { computeDemand, normalizeClipPrice } from '../../domain/economy/pricing'
 import { computeSaleQuantity, shouldSell, truncateCurrency } from '../../domain/economy/sales'
-import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_BRIBE, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST } from '../../domain/game'
+import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_BRIBE, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST, type GameState } from '../../domain/game'
 import { activateProject, canActivateProject, getVisibleProjects } from '../../domain/projects/projectRegistry'
 import {
   allocateProbeTrust,
@@ -23,7 +23,7 @@ import {
   runSpaceExplorationTick,
   runSpaceTick,
 } from '../../domain/space/space'
-import { cycleStrategySelection, runTournament } from '../../domain/strategy/tournaments'
+import { canCreateTournament, createNewTournament, cycleStrategySelection, runStrategyTick, runTournament } from '../../domain/strategy/tournaments'
 import { createSeededRng } from '../fixtures/seeded-rng'
 import { calculateSwarmComputingGifts, entertainSwarm, synchronizeSwarm } from '../../domain/compute/swarm'
 
@@ -480,20 +480,36 @@ describe('early economy parity', () => {
       },
       compute: {
         ...createInitialGameState().compute,
-        operations: 13_000,
-        standardOps: 13_000,
+        operations: 14_000,
+        standardOps: 14_000,
       },
     }
 
+    expect(canCreateTournament(state)).toBe(false)
     const strategyUnlocked = activateProject(state, 'project20')
-    const selected = cycleStrategySelection(strategyUnlocked)
-    const next = runTournament(selected, rng)
-
     expect(strategyUnlocked.strategy.unlocked).toBe(true)
-    expect(strategyUnlocked.compute.standardOps).toBe(1_000)
-    expect(next.strategy.yomi).toBeGreaterThan(0)
-    expect(next.compute.standardOps).toBe(0)
-    expect(next.strategy.lastResults.length).toBe(1)
+    expect(strategyUnlocked.compute.standardOps).toBe(2_000)
+    expect(canCreateTournament(strategyUnlocked)).toBe(true)
+    const selected = cycleStrategySelection(strategyUnlocked)
+
+    const next = createNewTournament(selected, rng)
+    expect(next.strategy.tourneyInProgress).toBe(true)
+    expect(next.compute.standardOps).toBe(1_000)
+    expect(canCreateTournament(next)).toBe(false)
+    expect(next.strategy.lastPayoffMatrix).toEqual({ AA: 1, AB: 2, BA: 3, BB: 4 })
+
+    const tourneyStarted = runTournament(next)
+    expect(tourneyStarted.strategy.tourneyStarted).toBe(true)
+    expect(tourneyStarted.strategy.yomi).toBe(0)
+
+    const tourneyInProgress = runStrategyTick(tourneyStarted, 500, rng)
+    expect(tourneyInProgress.strategy.yomi).toBe(0)
+
+    const tourneyOver = runStrategyTick(tourneyInProgress, 500, rng)
+    expect(tourneyOver.strategy.tourneyInProgress).toBe(false)
+    expect(tourneyOver.strategy.tourneyStarted).toBe(false)
+    expect(tourneyOver.strategy.yomi).toBeGreaterThan(0)
+    expect(tourneyOver.strategy.lastResults.length).toBe(1)
   })
 
   it('unlocks additional strategies through the project registry', () => {
@@ -601,6 +617,40 @@ describe('early economy parity', () => {
     }
 
     expect(activateProject(state, 'project40b')).toBe(state)
+  })
+
+  it('auto-tourney fires a new tournament after a 3-second delay', () => {
+    const rng = createSeededRng([0.1, 0.2, 0.3, 0.4, 0.49, 0.51, 0.25, 0.75, 0.5, 0.5, 0.5, 0.5])
+    const state: GameState = {
+      ...createInitialGameState(),
+      strategy: {
+        ...createInitialGameState().strategy,
+        unlocked: true,
+        autoTourneyEnabled: true,
+        selectedStrategy: 'RANDOM',
+        strategies: ['RANDOM'],
+        tourneyInProgress: false,
+        tourneyStarted: false,
+        resultsTimer: 0,
+        lastResults: [{ id: 'RANDOM', score: 10 }],
+        yomi: 0,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        operations: 2_000,
+        standardOps: 2_000,
+      },
+    }
+
+    const beforeThreshold = runStrategyTick(state, 2_990, rng)
+    expect(beforeThreshold.strategy.tourneyInProgress).toBe(false)
+    expect(beforeThreshold.compute.standardOps).toBe(2_000)
+
+    const afterThreshold = runStrategyTick(beforeThreshold, 10, rng)
+    expect(afterThreshold.strategy.tourneyInProgress).toBe(true)
+    expect(afterThreshold.strategy.tourneyStarted).toBe(true)
+    expect(afterThreshold.strategy.resultsTimer).toBe(0)
+    expect(afterThreshold.compute.standardOps).toBe(1_000)
   })
 
   it('releases the hypnodrones and ends the human economy', () => {
