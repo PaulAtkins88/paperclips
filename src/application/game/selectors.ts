@@ -12,6 +12,7 @@ import {
 } from '../../domain/game'
 import { getEarthPowerStatus } from '../../domain/earth/earth'
 import { getSpaceStatus } from '../../domain/space/space'
+import { getDroneStatus, getTotalDroneCount, timeUntilSwarmGift } from '../../domain/compute/swarm'
 
 export interface InfoRowViewModel {
   label: string
@@ -232,11 +233,27 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string) 
   const earthPower = getEarthPowerStatus(state)
   const showEarthProduction = visibility.showPostHuman && (state.earth.harvesterFlag || state.earth.wireDroneFlag || state.earth.factoryFlag)
   const showPowerGrid = visibility.showPostHuman && state.earth.powerGridFlag
+  const computeNoteUnlocked = [
+    `Proc ${formatNumber(state.compute.processors)}`,
+    `Mem ${formatNumber(state.compute.memory)}`,
+    `Max Ops ${formatNumber(getMaxOps(state))}`,
+    ...(state.earth.humanFlag ? [`Next Trust ${formatNumber(state.compute.nextTrust)}`] : []),
+    ...(state.compute.swarmGifts > 0 ? [`Swarm Gifts ${formatNumber(state.compute.swarmGifts)}`] : []),
+  ].join(' | ')
+  const droneCount = getTotalDroneCount(state)
 
   return {
     ...visibility,
     showEarthProduction,
     showPowerGrid,
+    showSwarmComputing: state.compute.swarmFlag && droneCount > 0,
+    droneCount,
+    swarmStatus: getDroneStatus(state),
+    canEntertain: state.compute.creativity >= state.compute.entertainCost,
+    entertainCostNote: `Creativity ${formatNumber(state.compute.creativity)} | Cost ${formatNumber(state.compute.entertainCost)} creativity`,
+    canSynchronize: state.strategy.yomi >= state.compute.synchCost,
+    synchronizeCostNote: `Yomi ${formatNumber(state.strategy.yomi)} | Cost ${formatNumber(state.compute.synchCost)} yomi`,
+    timeUntilSwarmGift: timeUntilSwarmGift(state),
     automationNote: `AutoClipper cost ${formatCurrency(state.production.autoClipperCost)}. MegaClipper ${state.projects.project22 ? formatCurrency(state.production.megaClipperCost) : 'locked'}.`,
     marketingNote: `Current level ${formatNumber(state.production.marketingLevel)}. Next ad cost ${formatCurrency(state.economy.adCost)}.`,
     transitionRows: [
@@ -264,9 +281,7 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string) 
     powerNote: state.earth.humanFlag
       ? 'Power systems appear after the post-human transition.'
       : `Costs ${formatNumber(state.earth.farmCost)} / ${formatNumber(state.earth.batteryCost)} clips`,
-    computeNote: state.compute.unlocked
-      ? `Proc ${formatNumber(state.compute.processors)} | Mem ${formatNumber(state.compute.memory)} | Max Ops ${formatNumber(getMaxOps(state))} | Next Trust ${formatNumber(state.compute.nextTrust)}`
-      : 'Locked until 2,000 clips or a no-wire/no-cash stall, like the original.',
+    computeNote: state.compute.unlocked ? computeNoteUnlocked : 'Locked until 2,000 clips or a no-wire/no-cash stall, like the original.',
     pricingNote: `Public demand is currently ${demand}.`,
     creativityNote: state.compute.creativityOn
       ? `Creativity ${formatNumber(state.compute.creativity, state.compute.creativity >= 100 ? 0 : 2)}`

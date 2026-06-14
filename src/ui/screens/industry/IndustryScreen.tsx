@@ -4,6 +4,7 @@ import { selectIndustryScreenViewModel } from '../../../application/game/selecto
 import { ActionPanel } from '../../components/ActionPanel'
 import { TrustThresholdMeter } from '../../components/TrustThresholdMeter'
 import { Button, CardGrid, InfoRow, PanelCard } from '../../system'
+import { SwarmPanel } from '../../components/SwarmPanel'
 
 interface IndustryScreenProps {
   state: GameState
@@ -118,6 +119,22 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
           secondaryTooltip="Spend one available trust slot on more memory."
           onSecondary={() => dispatch({ type: 'addMemory' })}
           footer={<TrustThresholdMeter state={state} />}
+        />
+      ) : null}
+
+      {viewModel.showSwarmComputing ? (
+        <SwarmPanel
+          droneCount={viewModel.droneCount}
+          swarmStatus={viewModel.swarmStatus}
+          timeUntilSwarmGift={viewModel.timeUntilSwarmGift}
+          canEntertain={viewModel.canEntertain}
+          entertainCostNote={viewModel.entertainCostNote}
+          onEntertainSwarm={() => dispatch({ type: 'entertainSwarm' })}
+          canSynchronize={viewModel.canSynchronize}
+          synchronizeCostNote={viewModel.synchronizeCostNote}
+          onSynchronizeSwarm={() => dispatch({ type: 'synchronizeSwarm' })}
+          swarmSliderPosition={state.compute.swarmComputingBalance}
+          onDrag={workThinkBalance => dispatch({ type: 'setSwarmComputingBalance', workThinkBalance })}
         />
       ) : null}
 

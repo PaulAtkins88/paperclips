@@ -1,3 +1,4 @@
+import { getSwarmEfficiency } from '../compute/swarm'
 import type { GameState } from '../game'
 
 export const EARTH_TICK_MS = 100
@@ -170,7 +171,8 @@ function acquireMatter(state: GameState): GameState {
     return state
   }
 
-  const requested = state.earth.powMod * Math.floor(state.earth.harvesterLevel) * state.earth.harvesterRate
+  const swarmEfficiency = getSwarmEfficiency(state)
+  const requested = state.earth.powMod * swarmEfficiency * Math.floor(state.earth.harvesterLevel) * state.earth.harvesterRate
   const amount = Math.min(requested, state.earth.availableMatter)
 
   if (amount <= 0) {
@@ -192,7 +194,8 @@ function processMatter(state: GameState): GameState {
     return state
   }
 
-  const requested = state.earth.powMod * Math.floor(state.earth.wireDroneLevel) * state.earth.wireDroneRate
+  const swarmEfficiency = getSwarmEfficiency(state)
+  const requested = state.earth.powMod * swarmEfficiency * Math.floor(state.earth.wireDroneLevel) * state.earth.wireDroneRate
   const amount = Math.min(requested, state.earth.acquiredMatter)
 
   if (amount <= 0) {
