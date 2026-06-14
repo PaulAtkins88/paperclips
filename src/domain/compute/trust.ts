@@ -9,7 +9,7 @@ export const INITIAL_MEMORY = 1
 export const INITIAL_CREATIVITY_SPEED = 1
 
 export function calculateTrust(state: GameState): GameState {
-  if (state.production.clips <= state.compute.nextTrust - 1) {
+  if (!state.earth.humanFlag || state.production.clips <= state.compute.nextTrust - 1) {
     return state
   }
 

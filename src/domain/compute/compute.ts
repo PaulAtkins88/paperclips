@@ -1,9 +1,9 @@
 import type { GameState } from '../game'
 import { calculateCreativity, canUnlockCreativity } from './creativity'
 import { calculateOperations, spendOperations } from './operations'
+import { calculateSwarmComputingGifts } from './swarm'
 import { calculateTrust, canAllocateTrust, shouldUnlockCompute } from './trust'
-
-export const COMPUTE_TICK_MS = 10
+import { COMPUTE_TICK_MS } from './constants'
 
 export function syncComputeState(state: GameState): GameState {
   const unlocked = shouldUnlockCompute(state)
@@ -34,6 +34,7 @@ export function runComputeTick(state: GameState, deltaMs: number): GameState {
     next = calculateOperations(next)
     next = calculateTrust(next)
     next = calculateCreativity(next)
+    next = calculateSwarmComputingGifts(next)
   }
 
   return syncComputeState(next)
@@ -46,6 +47,7 @@ export function addProcessor(state: GameState): GameState {
 
   const processors = state.compute.processors + 1
   const creativitySpeed = Math.log10(processors) * Math.pow(processors, 1.1) + processors - 1
+  const swarmGifts = state.earth.humanFlag ? state.compute.swarmGifts : state.compute.swarmGifts - 1
 
   return {
     ...state,
@@ -53,6 +55,7 @@ export function addProcessor(state: GameState): GameState {
       ...state.compute,
       processors,
       creativitySpeed,
+      swarmGifts,
     },
     lastAction: state.compute.creativityOn
       ? 'Processor added, operations (or creativity) per sec increased'
@@ -65,11 +68,14 @@ export function addMemory(state: GameState): GameState {
     return state
   }
 
+  const swarmGifts = state.earth.humanFlag ? state.compute.swarmGifts : state.compute.swarmGifts - 1
+
   return {
     ...state,
     compute: {
       ...state.compute,
       memory: state.compute.memory + 1,
+      swarmGifts,
     },
     lastAction: 'Memory added, max operations increased',
   }

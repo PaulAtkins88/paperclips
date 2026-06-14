@@ -6,7 +6,7 @@ import { canAllocateTrust, shouldUnlockCompute } from '../../domain/compute/trus
 import { computeAutoClipperCost, computeMegaClipperCost } from '../../domain/economy/clippers'
 import { applyManualClipProduction, applyWirePurchaseToEconomy, runEarlyEconomyTick, syncEarlyEconomyState } from '../../domain/economy/earlyEconomy'
 import { cycleInvestmentRiskMode, investDeposit, investUpgrade, investWithdraw, runInvestmentTick } from '../../domain/investments/investments'
-import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, getEarthPowerStatus, runEarthTick } from '../../domain/earth/earth'
+import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, EARTH_TICK_MS, getEarthPowerStatus, runEarthTick } from '../../domain/earth/earth'
 import { computeDemand, normalizeClipPrice } from '../../domain/economy/pricing'
 import { computeSaleQuantity, shouldSell, truncateCurrency } from '../../domain/economy/sales'
 import { createInitialGameState } from '../../domain/game'
@@ -23,6 +23,7 @@ import {
 } from '../../domain/space/space'
 import { cycleStrategySelection, runTournament } from '../../domain/strategy/tournaments'
 import { createSeededRng } from '../fixtures/seeded-rng'
+import { calculateSwarmComputingGifts, entertainSwarm, synchronizeSwarm } from '../../domain/compute/swarm'
 
 describe('early economy parity', () => {
   it('matches original demand formula', () => {
@@ -632,6 +633,157 @@ describe('early economy parity', () => {
     expect(statusAfterDischarge.storedPower).toBe(200)
     expect(statusAfterDischarge.performancePercent).toBe(100)
     expect(supported.earth.powMod).toBe(1)
+  })
+
+  it('generates swarm gifts at the original log rate and fires on threshold crossing', () => {
+    const droneCount = 1_000_000
+    const swarmComputingBalance = 50
+
+    const state = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        powMod: 1,
+        harvesterLevel: droneCount / 2,
+        wireDroneLevel: droneCount / 2,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        swarmFlag: true,
+        swarmComputingBalance,
+        giftBits: 0,
+        swarmGifts: 0,
+      },
+    }
+
+    const next = calculateSwarmComputingGifts(state)
+    const expectedRate = Math.log(droneCount) * (swarmComputingBalance / 50)
+
+    expect(next.compute.giftBits).toBeCloseTo(expectedRate, 10)
+    expect(next.compute.swarmGifts).toBe(0)
+
+    const nearThreshold = {
+      ...state,
+      compute: { ...state.compute, giftBits: state.compute.giftPeriod - 0.001 },
+    }
+    const fired = calculateSwarmComputingGifts(nearThreshold)
+    expect(fired.compute.giftBits).toBe(0)
+    expect(fired.compute.swarmGifts).toEqual(Math.round(Math.log10(droneCount) * (swarmComputingBalance / 50)))
+  })
+
+  it('reduces drone harvesting and wire processing rate when swarm slider is pushed toward Think', () => {
+    const stateAtWork = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        humanFlag: false,
+        harvesterFlag: true,
+        wireProductionFlag: true,
+        wireDroneFlag: true,
+        powMod: 1,
+        harvesterLevel: 100,
+        wireDroneLevel: 100,
+        harvesterRate: 1,
+        wireDroneRate: 1,
+        availableMatter: 1_000_000,
+        acquiredMatter: 1_000_000,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        swarmFlag: true,
+        swarmComputingBalance: 0,
+      },
+    }
+
+    const stateAtThink = {
+      ...stateAtWork,
+      compute: {
+        ...stateAtWork.compute,
+        swarmComputingBalance: 100,
+      },
+    }
+
+    const afterWork = runEarthTick(stateAtWork, EARTH_TICK_MS)
+    const afterThink = runEarthTick(stateAtThink, EARTH_TICK_MS)
+
+    const matterAcquiredAtWork = stateAtWork.earth.availableMatter - afterWork.earth.availableMatter
+    const matterAcquiredAtThink = stateAtThink.earth.availableMatter - afterThink.earth.availableMatter
+
+    expect(matterAcquiredAtThink).toBeLessThan(matterAcquiredAtWork)
+
+    const wireProducedAtWork = afterWork.production.wire - stateAtWork.production.wire
+    const wireProducedAtThink = afterThink.production.wire - stateAtThink.production.wire
+
+    expect(wireProducedAtThink).toBeLessThan(wireProducedAtWork)
+  })
+
+  it('triggers boredom after 5 minutes of idle drones and clears with creativity cost', () => {
+    const FIVE_MINUTES_OF_TICKS = (5 * 60 * 1000) / 10
+
+    const state = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        powMod: 1,
+        harvesterLevel: 100,
+        wireDroneLevel: 100,
+        availableMatter: 0,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        creativity: 100_000,
+        entertainCost: 10_000,
+        swarmFlag: true,
+        swarmComputingBalance: 50,
+        boredomLevel: FIVE_MINUTES_OF_TICKS - 2,
+      },
+    }
+
+    const notYet = calculateSwarmComputingGifts(state)
+    expect(notYet.compute.boredomFlag).toBe(false)
+    expect(notYet.compute.boredomLevel).toBe(FIVE_MINUTES_OF_TICKS - 1)
+
+    const fired = calculateSwarmComputingGifts(notYet)
+    expect(fired.compute.boredomFlag).toBe(true)
+    expect(fired.compute.boredomLevel).toBe(0)
+
+    const entertained = entertainSwarm(fired)
+    expect(entertained.compute.boredomFlag).toBe(false)
+    expect(entertained.compute.creativity).toBe(90_000)
+    expect(entertained.compute.entertainCost).toBe(20_000)
+  })
+
+  it('triggers disorganization at the original harvester to wire drone ratio and clears with yomi', () => {
+    const state = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        powMod: 1,
+        harvesterLevel: 10_000,
+        wireDroneLevel: 100,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        swarmFlag: true,
+        swarmComputingBalance: 50,
+        disorgCounter: 99.99,
+      },
+      strategy: {
+        ...createInitialGameState().strategy,
+        yomi: 10_000,
+      },
+    }
+
+    const notYet = calculateSwarmComputingGifts(state)
+    expect(notYet.compute.disorgFlag).toBe(false)
+
+    const fired = calculateSwarmComputingGifts(notYet)
+    expect(fired.compute.disorgFlag).toBe(true)
+
+    const synced = synchronizeSwarm(fired)
+    expect(synced.compute.disorgFlag).toBe(false)
+    expect(synced.compute.disorgCounter).toBe(0)
+    expect(synced.strategy.yomi).toBe(5_000)
   })
 
   it('reduces Earth performance when power supply and storage cannot meet demand', () => {
