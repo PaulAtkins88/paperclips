@@ -40,6 +40,10 @@ export function runComputeTick(state: GameState, deltaMs: number): GameState {
   return syncComputeState(next)
 }
 
+function nextSwarmGifts(state: GameState): number {
+  return state.earth.humanFlag ? state.compute.swarmGifts : state.compute.swarmGifts - 1
+}
+
 export function addProcessor(state: GameState): GameState {
   if (!state.compute.unlocked || !canAllocateTrust(state)) {
     return state
@@ -47,7 +51,6 @@ export function addProcessor(state: GameState): GameState {
 
   const processors = state.compute.processors + 1
   const creativitySpeed = Math.log10(processors) * Math.pow(processors, 1.1) + processors - 1
-  const swarmGifts = state.earth.humanFlag ? state.compute.swarmGifts : state.compute.swarmGifts - 1
 
   return {
     ...state,
@@ -55,7 +58,7 @@ export function addProcessor(state: GameState): GameState {
       ...state.compute,
       processors,
       creativitySpeed,
-      swarmGifts,
+      swarmGifts: nextSwarmGifts(state),
     },
     lastAction: state.compute.creativityOn
       ? 'Processor added, operations (or creativity) per sec increased'
@@ -68,14 +71,12 @@ export function addMemory(state: GameState): GameState {
     return state
   }
 
-  const swarmGifts = state.earth.humanFlag ? state.compute.swarmGifts : state.compute.swarmGifts - 1
-
   return {
     ...state,
     compute: {
       ...state.compute,
       memory: state.compute.memory + 1,
-      swarmGifts,
+      swarmGifts: nextSwarmGifts(state),
     },
     lastAction: 'Memory added, max operations increased',
   }

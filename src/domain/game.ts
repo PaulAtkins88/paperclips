@@ -60,7 +60,7 @@ import {
   type TournamentResult,
 } from './strategy/tournaments'
 import type { ProjectCost, ProjectId, VisibleProject } from './projects/projectTypes'
-import { setSwarmComputingBalance, entertainSwarm, GIFT_PERIOD, INITIAL_ENTERTAIN_COST, SYNCHRONIZATION_COST, synchronizeSwarm } from './compute/swarm'
+import { setSwarmComputingBalance, entertainSwarm, GIFT_PERIOD, INITIAL_ENTERTAIN_COST, SYNCHRONIZATION_COST, synchronizeSwarm, type SwarmStatus } from './compute/swarm'
 
 export type GamePhase = 'boot' | 'industry' | 'compute' | 'expansion'
 export type GameEarthPhase = 'human' | 'postHuman'
@@ -928,4 +928,4 @@ export function createInitialProjectFlags(): Record<ProjectId, boolean> {
   }
 }
 
-export type { ProjectCost, ProjectId, VisibleProject }
+export type { ProjectCost, ProjectId, VisibleProject, SwarmStatus }

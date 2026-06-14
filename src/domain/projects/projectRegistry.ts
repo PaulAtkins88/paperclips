@@ -1031,7 +1031,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     title: 'Drone Flocking: Collision Avoidance',
     description: 'All drones 100x more effective.',
     isVisible: (state) =>
-      (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 500 &&
+      getTotalDroneCount(state) >= 500 &&
       !state.projects.project110,
     canActivate: (state) => state.compute.operations >= 80_000,
     getCost: () => [{ amount: 80_000, unit: 'ops' }],
@@ -1048,7 +1048,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     title: 'Drone Flocking: Alignment',
     description: 'All drones 1,000x more effective.',
     isVisible: (state) =>
-      (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 5_000 &&
+      getTotalDroneCount(state) >= 5_000 &&
       !state.projects.project111,
     canActivate: (state) => state.compute.operations >= 100_000,
     getCost: () => [{ amount: 100_000, unit: 'ops' }],
