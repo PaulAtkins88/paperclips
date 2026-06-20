@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { addMemory, addProcessor, runComputeTick, unlockCreativity } from '../../domain/compute/compute'
 import { calculateCreativity } from '../../domain/compute/creativity'
-import { OP_FADE_ACCELERATION } from '../../domain/compute/operations'
+import { calculateOperations, getMaxOperations, OP_FADE_ACCELERATION, OP_FADE_DELAY } from '../../domain/compute/operations'
 import { canAllocateTrust, shouldUnlockCompute } from '../../domain/compute/trust'
+import { calculateQuantumOps, createInitialQChips, quantumCompute } from '../../domain/compute/quantum'
 import { computeAutoClipperCost, computeMegaClipperCost } from '../../domain/economy/clippers'
 import { applyManualClipProduction, applyWirePurchaseToEconomy, runEarlyEconomyTick, syncEarlyEconomyState } from '../../domain/economy/earlyEconomy'
 import { cycleInvestmentRiskMode, investDeposit, investUpgrade, investWithdraw, runInvestmentTick } from '../../domain/investments/investments'
@@ -169,6 +170,96 @@ describe('early economy parity', () => {
 
     expect(next.compute.operations).toBe(0)
     expect(next.compute.standardOps).toBeCloseTo(0.2, 10)
+  })
+
+  it('accumulates quantum ops from all active chips using original sine wave formula', () => {
+    const initialGameState = createInitialGameState()
+    for (const qClock of [1.0, 5.0, 30.0]) {
+      const state = {
+        ...initialGameState,
+        projects: {
+          ...initialGameState.projects,
+          project50: true,
+        },
+        compute: {
+          ...initialGameState.compute,
+          qClock,
+          qChips: createInitialQChips().map(chip => ({ ...chip, active: true, value: Math.sin(qClock * chip.waveSeed) })),
+          memory: 10,
+          standardOps: 0,
+          tempOps: 0,
+        },
+      }
+
+      const afterOps = quantumCompute(state)
+
+      const expectedQ = state.compute.qChips.reduce((sum, chip) => sum + chip.value, 0)
+      const expectedQQ = Math.ceil(expectedQ * 360)
+
+      expect(afterOps.compute.qOps).toBe(expectedQQ)
+      expect(afterOps.compute.standardOps).toBe(expectedQQ)
+    }
+  })
+
+  it('routes excess quantum ops into temp ops when standard ops would exceed memory ceiling', () => {
+    const memory = 10
+    const maxOps = getMaxOperations(memory)
+    const standardOps = maxOps - 1
+
+    const state = {
+      ...createInitialGameState(),
+      projects: {
+        ...createInitialGameState().projects,
+        project50: true,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        qClock: 1.0,
+        qChips: createInitialQChips().map(chip => ({ ...chip, active: true, value: Math.sin(chip.waveSeed) })),
+        memory,
+        standardOps,
+        tempOps: 0,
+      },
+    }
+
+    const afterOps = quantumCompute(state)
+
+    const q = state.compute.qChips.reduce((sum, chip) => sum + chip.value, 0)
+    const qq = Math.ceil(q * 360)
+    const buffer = maxOps - standardOps
+    const damper = (0 / 100) + 5
+
+    expect(afterOps.compute.standardOps).toBe(maxOps)
+    expect(afterOps.compute.tempOps).toBe(Math.ceil(qq / damper) - buffer)
+  })
+
+  it('resets temp ops decay after a quantum compute overflow so that fade begins at the original delay', () => {
+    const memory = 10
+    const maxOps = memory * 1000
+    const standardOps = maxOps - 1
+
+    const state = {
+      ...createInitialGameState(),
+      projects: {
+        ...createInitialGameState().projects,
+        project50: true,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        qClock: 1.0,
+        qChips: createInitialQChips().map(chip => ({ ...chip, active: true, value: Math.sin(chip.waveSeed) })),
+        memory,
+        standardOps,
+        tempOps: 0,
+        opFade: 5,
+        opFadeTimer: OP_FADE_DELAY + 100,
+      },
+    }
+
+    const afterClick = quantumCompute(state)
+    const afterTick = calculateOperations(afterClick)
+
+    expect(afterTick.compute.tempOps).toBe(Math.round(afterClick.compute.tempOps - 0.01))
   })
 
   it('starts temp ops fade only after the original delay and acceleration constant', () => {
@@ -1667,5 +1758,155 @@ describe('early economy parity', () => {
     } finally {
       Math.random = originalRandom
     }
+  })
+
+  it('calculateQuantumOps advances qClock by 0.01 and recomputes active chip values via original sine formula', () => {
+    const qClock = 2.5
+    const activeChips = createInitialQChips().map(c => ({ ...c, active: true }))
+    const state = {
+      ...createInitialGameState(),
+      projects: { ...createInitialGameState().projects, project50: true },
+      compute: {
+        ...createInitialGameState().compute,
+        qClock,
+        qChips: activeChips,
+      },
+    }
+
+    const next = calculateQuantumOps(state)
+    const nextClock = qClock + 0.01
+
+    expect(next.compute.qClock).toBeCloseTo(nextClock, 10)
+    for (const chip of next.compute.qChips) {
+      const expectedValue = Math.sin(nextClock * chip.waveSeed)
+      expect(chip.value).toBeCloseTo(expectedValue, 10)
+    }
+  })
+
+  it('calculateQuantumOps sets inactive chip values to zero regardless of qClock', () => {
+    const qClock = 2.5
+    const state = {
+      ...createInitialGameState(),
+      projects: { ...createInitialGameState().projects, project50: true },
+      compute: { ...createInitialGameState().compute, qClock, qChips: createInitialQChips() },
+    }
+
+    const next = calculateQuantumOps(state)
+
+    for (const chip of next.compute.qChips) {
+      expect(chip.value).toBe(0)
+    }
+  })
+
+  it('calculateQuantumOps is a no-op before project50 is unlocked', () => {
+    const state = createInitialGameState()
+    const next = calculateQuantumOps(state)
+    expect(next).toBe(state)
+  })
+
+  it('project50 (Quantum Computing) is visible at 5 processors and costs 10,000 ops', () => {
+    const state = {
+      ...createInitialGameState(),
+      compute: {
+        ...createInitialGameState().compute,
+        processors: 5,
+        operations: 10_000,
+        standardOps: 10_000,
+      },
+    }
+
+    expect(getVisibleProjects(state).some(p => p.id === 'project50')).toBe(true)
+    expect(canActivateProject(state, 'project50')).toBe(true)
+
+    const next = activateProject(state, 'project50')
+    expect(next.projects.project50).toBe(true)
+    expect(next.compute.standardOps).toBe(0)
+  })
+
+  it('project50 is not visible with fewer than 5 processors', () => {
+    const state = {
+      ...createInitialGameState(),
+      compute: { ...createInitialGameState().compute, processors: 4, operations: 10_000, standardOps: 10_000 },
+    }
+    expect(getVisibleProjects(state).some(p => p.id === 'project50')).toBe(false)
+  })
+
+  it('project51 (Photonic Chip) activates the first inactive chip and increments cost by 5,000', () => {
+    const initialCost = 10_000
+    const state = {
+      ...createInitialGameState(),
+      projects: { ...createInitialGameState().projects, project50: true },
+      compute: {
+        ...createInitialGameState().compute,
+        qChips: createInitialQChips(),
+        qChipCost: initialCost,
+        operations: initialCost,
+        standardOps: initialCost,
+      },
+    }
+
+    expect(canActivateProject(state, 'project51')).toBe(true)
+    const next = activateProject(state, 'project51')
+
+    expect(next.compute.qChips[0].active).toBe(true)
+    expect(next.compute.qChips[1].active).toBe(false)
+    expect(next.compute.qChipCost).toBe(initialCost + 5_000)
+    expect(next.compute.standardOps).toBe(0)
+  })
+
+  it('project51 activates chips sequentially and hides once all 10 are active', () => {
+    const allActiveChips = createInitialQChips().map(c => ({ ...c, active: true }))
+    const state = {
+      ...createInitialGameState(),
+      projects: { ...createInitialGameState().projects, project50: true },
+      compute: {
+        ...createInitialGameState().compute,
+        qChips: allActiveChips,
+        qChipCost: 10_000,
+        operations: 10_000,
+        standardOps: 10_000,
+      },
+    }
+
+    expect(getVisibleProjects(state).some(p => p.id === 'project51')).toBe(false)
+  })
+
+  it('project217 (Quantum Temporal Reversion) is visible when ops fall to -10,000', () => {
+    const state = {
+      ...createInitialGameState(),
+      compute: {
+        ...createInitialGameState().compute,
+        operations: -10_000,
+        standardOps: -10_000,
+      },
+    }
+
+    expect(getVisibleProjects(state).some(p => p.id === 'project217')).toBe(true)
+    expect(canActivateProject(state, 'project217')).toBe(true)
+  })
+
+  it('project217 is not visible when ops are non-negative', () => {
+    const state = createInitialGameState()
+    expect(getVisibleProjects(state).some(p => p.id === 'project217')).toBe(false)
+  })
+
+  it('project217 resets to a fresh game state seeded with pre-reset ops + 10,000', () => {
+    const negativeOps = -12_000
+    const state = {
+      ...createInitialGameState(),
+      projects: { ...createInitialGameState().projects, project50: true },
+      compute: {
+        ...createInitialGameState().compute,
+        operations: negativeOps,
+        standardOps: negativeOps,
+      },
+    }
+
+    const next = activateProject(state, 'project217')
+
+    expect(next.projects.project217).toBe(true)
+    expect(next.projects.project50).toBe(false)
+    expect(next.compute.standardOps).toBe(negativeOps + 10_000)
+    expect(next.production.clips).toBe(0)
   })
 })
