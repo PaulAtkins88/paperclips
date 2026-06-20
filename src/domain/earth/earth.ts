@@ -254,7 +254,7 @@ export function getEarthPowerStatus(state: GameState): EarthPowerStatus {
 }
 
 function syncEarthPower(state: GameState): GameState {
-  if (state.earth.humanFlag || !state.earth.powerGridFlag) {
+  if (state.earth.humanFlag || state.earth.spaceFlag || !state.earth.powerGridFlag) {
     return state
   }
 
