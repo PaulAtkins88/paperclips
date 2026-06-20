@@ -166,6 +166,7 @@ export interface GameStrategy {
   lastPayoffMatrix: TournamentPayoffMatrix | null
   hMovePrev: 'A' | 'B'
   vMovePrev: 'A' | 'B'
+  strategicAttachmentFlag: boolean
 }
 
 export interface GameEarth {
@@ -475,6 +476,7 @@ export function createInitialGameState(): GameState {
       lastPayoffMatrix: null,
       hMovePrev: 'A',
       vMovePrev: 'A',
+      strategicAttachmentFlag: false,
     },
     earth: {
       phase: 'human',
@@ -911,6 +913,7 @@ export function createInitialProjectFlags(): Record<ProjectId, boolean> {
     project110: false,
     project111: false,
     project125: false,
+    project128: false,
     project118: false,
     project119: false,
     project120: false,

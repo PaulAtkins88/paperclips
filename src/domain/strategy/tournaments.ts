@@ -96,8 +96,19 @@ export function runTournament(state: GameState, random: () => number): GameState
     const rankIndex = results.findIndex((result) => result.id === spent.strategy.selectedStrategy)
 
     if (rankIndex >= 0) {
+      const selectedScore = results[rankIndex].score
       const beatBoost = Math.max(1, results.length - rankIndex - 1)
-      yomi += results[rankIndex].score * spent.strategy.yomiBoost * beatBoost
+      yomi += selectedScore * spent.strategy.yomiBoost * beatBoost
+
+      if (spent.strategy.strategicAttachmentFlag) {
+        const winScore = results[0]?.score ?? -1
+        const placeScore = results.find((r) => r.score < winScore)?.score ?? -1
+        const showScore = results.find((r) => r.score < placeScore)?.score ?? -1
+
+        if (selectedScore === winScore) yomi += 50_000
+        else if (placeScore >= 0 && selectedScore === placeScore) yomi += 30_000
+        else if (showScore >= 0 && selectedScore === showScore) yomi += 20_000
+      }
     }
   }
 
