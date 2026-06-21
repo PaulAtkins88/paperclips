@@ -17,6 +17,8 @@ export type ProjectId =
   | 'project38'
   | 'project4'
   | 'project5'
+  | 'project50'
+  | 'project51'
   | 'project6'
   | 'project60'
   | 'project61'
@@ -68,6 +70,7 @@ export type ProjectId =
   | 'project130'
   | 'project131'
   | 'project127'
+  | 'project217'
   | 'project219'
   | 'project34'
 

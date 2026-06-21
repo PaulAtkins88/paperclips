@@ -1,6 +1,7 @@
 import type { GameState } from '../game'
 import { calculateCreativity, canUnlockCreativity } from './creativity'
 import { calculateOperations, spendOperations } from './operations'
+import { calculateQuantumOps } from './quantum'
 import { calculateSwarmComputingGifts } from './swarm'
 import { calculateTrust, canAllocateTrust, shouldUnlockCompute } from './trust'
 import { COMPUTE_TICK_MS } from './constants'
@@ -32,6 +33,7 @@ export function runComputeTick(state: GameState, deltaMs: number): GameState {
 
   for (let tick = 0; tick < fastTicks; tick += 1) {
     next = calculateOperations(next)
+    next = calculateQuantumOps(next)
     next = calculateTrust(next)
     next = calculateCreativity(next)
     next = calculateSwarmComputingGifts(next)

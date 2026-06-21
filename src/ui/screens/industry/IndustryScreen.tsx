@@ -5,6 +5,8 @@ import { ActionPanel } from '../../components/ActionPanel'
 import { TrustThresholdMeter } from '../../components/TrustThresholdMeter'
 import { Button, CardGrid, InfoRow, PanelCard } from '../../system'
 import { SwarmPanel } from '../../components/SwarmPanel'
+import { QChipVisualizer } from '../../components/QChipVisualizer'
+import { useShowQOps } from '../../../application/game/useShowQOps'
 
 interface IndustryScreenProps {
   state: GameState
@@ -15,7 +17,8 @@ interface IndustryScreenProps {
 }
 
 export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenProjects }: IndustryScreenProps) {
-  const viewModel = selectIndustryScreenViewModel(state, demand)
+  const { showQOps, triggerShowQOps } = useShowQOps()
+  const viewModel = selectIndustryScreenViewModel(state, demand, showQOps)
 
   return (
     <CardGrid>
@@ -135,6 +138,21 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
           onSynchronizeSwarm={() => dispatch({ type: 'synchronizeSwarm' })}
           swarmSliderPosition={state.compute.swarmComputingBalance}
           onDrag={workThinkBalance => dispatch({ type: 'setSwarmComputingBalance', workThinkBalance })}
+          />
+        ) : null}
+
+      {viewModel.showQuantumCompute ? (
+        <ActionPanel
+          title="Quantum Computing"
+          description="Use probability amplitudes to generate bonus ops."
+          tooltip="Harvest quantum operations by clicking Compute at peak wave amplitude."
+          primaryLabel="Quantum Compute"
+          onPrimary={() => {
+            dispatch({ type: 'quantumCompute' })
+            triggerShowQOps()
+          }}
+          note={viewModel.quantumNote}
+          footer={<QChipVisualizer chips={state.compute.qChips} qClock={state.compute.qClock} />}
         />
       ) : null}
 
