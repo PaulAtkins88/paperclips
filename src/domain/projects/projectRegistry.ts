@@ -1245,11 +1245,11 @@ function markProjectComplete(
 function activateSpaceExploration(state: GameState): GameState {
   const productionRefund = state.production.unusedClips
     - 5 * Math.pow(10, 27)
-    + getEarthFactoryRefund(state)
-    + getEarthHarvesterRefund(state)
-    + getEarthWireDroneRefund(state)
-    + getEarthFarmRefund(state)
-    + getEarthBatteryRefund(state)
+    + state.earth.factoryBill
+    + state.earth.harvesterBill
+    + state.earth.wireDroneBill
+    + state.earth.farmBill
+    + state.earth.batteryBill
 
   return markProjectComplete(state, 'project46', {
     production: {
@@ -1269,6 +1269,11 @@ function activateSpaceExploration(state: GameState): GameState {
       factoryCost: 100_000_000,
       harvesterCost: 1_000_000,
       wireDroneCost: 1_000_000,
+      farmBill: 0,
+      batteryBill: 0,
+      factoryBill: 0,
+      harvesterBill: 0,
+      wireDroneBill: 0,
       powerProductionRate: 0,
       powerConsumptionRate: 0,
       factoryPowerConsumptionRate: 0,
@@ -1276,72 +1281,6 @@ function activateSpaceExploration(state: GameState): GameState {
     },
     lastAction: 'Von Neumann Probes online',
   })
-}
-
-function getEarthFactoryRefund(state: GameState): number {
-  let refund = 0
-  let cost = 100_000_000
-
-  for (let level = 0; level < state.earth.factoryLevel; level += 1) {
-    refund += cost
-    cost *= getFactoryCostMultiplier(level + 1)
-  }
-
-  return refund
-}
-
-function getEarthHarvesterRefund(state: GameState): number {
-  return getQuadraticEarthRefund(state.earth.harvesterLevel, 1_000_000, 2.25)
-}
-
-function getEarthWireDroneRefund(state: GameState): number {
-  return getQuadraticEarthRefund(state.earth.wireDroneLevel, 1_000_000, 2.25)
-}
-
-function getEarthFarmRefund(state: GameState): number {
-  return getQuadraticEarthRefund(state.earth.farmLevel, 10_000_000, 2.78)
-}
-
-function getEarthBatteryRefund(state: GameState): number {
-  return getQuadraticEarthRefund(state.earth.batteryLevel, 1_000_000, 2.54)
-}
-
-function getQuadraticEarthRefund(level: number, baseCost: number, exponent: number): number {
-  if (level <= 0) {
-    return 0
-  }
-
-  let refund = baseCost
-
-  for (let index = 1; index < level; index += 1) {
-    refund += Math.pow(index + 1, exponent) * baseCost
-  }
-
-  return refund
-}
-
-function getFactoryCostMultiplier(level: number): number {
-  if (level <= 7) {
-    return 11 - level
-  }
-
-  if (level <= 12) {
-    return 2
-  }
-
-  if (level <= 19) {
-    return 1.5
-  }
-
-  if (level <= 38) {
-    return 1.25
-  }
-
-  if (level <= 78) {
-    return 1.15
-  }
-
-  return 1.1
 }
 
 export { PROJECT_REGISTRY }
