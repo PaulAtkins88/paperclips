@@ -622,6 +622,54 @@ describe('early economy parity', () => {
     expect(withFactory.earth.factoryBill).toBe(INITIAL_FACTORY_COST)
   })
 
+  it('reboot functions are no-ops when the level is already 0', () => {
+    const base = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        phase: 'postHuman' as const,
+        humanFlag: false,
+        harvesterFlag: true,
+        wireDroneFlag: true,
+        factoryFlag: true,
+        powerGridFlag: true,
+      },
+    }
+
+    expect(rebootHarvesters(base)).toBe(base)
+    expect(rebootWireDrones(base)).toBe(base)
+    expect(rebootFactories(base)).toBe(base)
+    expect(rebootFarms(base)).toBe(base)
+    expect(rebootBatteries(base)).toBe(base)
+  })
+
+  it('harvester bill accumulates the sum of all costs paid across multiple purchases', () => {
+    const base = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        unusedClips: 1_000_000_000,
+      },
+      earth: {
+        ...createInitialGameState().earth,
+        phase: 'postHuman' as const,
+        humanFlag: false,
+        harvesterFlag: true,
+      },
+    }
+
+    const h1 = buyHarvester(base)
+    const h2 = buyHarvester(h1)
+    const h3 = buyHarvester(h2)
+
+    const expectedBill = INITIAL_HARVESTER_COST
+      + Math.pow(2, 2.25) * 1_000_000
+      + Math.pow(3, 2.25) * 1_000_000
+
+    expect(h3.earth.harvesterLevel).toBe(3)
+    expect(h3.earth.harvesterBill).toBeCloseTo(expectedBill, 10)
+  })
+
   it('reboots harvesters, wire drones, and factories, zeroing levels and refunding clips', () => {
     const base = {
       ...createInitialGameState(),

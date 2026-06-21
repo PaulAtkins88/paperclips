@@ -287,6 +287,11 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string, 
       { label: 'Stored power', value: `${formatNumber(earthPower.storedPower)} / ${formatNumber(earthPower.maxStoredPower)} MW-seconds` },
       { label: 'Farms / Batteries', value: `${formatNumber(state.earth.farmLevel)} / ${formatNumber(state.earth.batteryLevel)}` },
     ],
+    harvesterDisassembleTooltip: `Regain ${formatNumber(state.earth.harvesterBill)} clips`,
+    wireDroneDisassembleTooltip: `Regain ${formatNumber(state.earth.wireDroneBill)} clips`,
+    factoryDisassembleTooltip: `Regain ${formatNumber(state.earth.factoryBill)} clips`,
+    farmDisassembleTooltip: `Regain ${formatNumber(state.earth.farmBill)} clips`,
+    batteryDisassembleTooltip: `Regain ${formatNumber(state.earth.batteryBill)} clips`,
     powerNote: state.earth.humanFlag
       ? 'Power systems appear after the post-human transition.'
       : `Costs ${formatNumber(state.earth.farmCost)} / ${formatNumber(state.earth.batteryCost)} clips`,
