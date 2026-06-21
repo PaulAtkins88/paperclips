@@ -7,10 +7,10 @@ import { calculateQuantumOps, createInitialQChips, quantumCompute } from '../../
 import { computeAutoClipperCost, computeMegaClipperCost } from '../../domain/economy/clippers'
 import { applyManualClipProduction, applyWirePurchaseToEconomy, runEarlyEconomyTick, syncEarlyEconomyState } from '../../domain/economy/earlyEconomy'
 import { cycleInvestmentRiskMode, investDeposit, investUpgrade, investWithdraw, runInvestmentTick } from '../../domain/investments/investments'
-import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, EARTH_TICK_MS, getEarthPowerStatus, runEarthTick } from '../../domain/earth/earth'
+import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, EARTH_TICK_MS, getEarthPowerStatus, rebootBatteries, rebootFactories, rebootFarms, rebootHarvesters, rebootWireDrones, runEarthTick } from '../../domain/earth/earth'
 import { computeDemand, normalizeClipPrice } from '../../domain/economy/pricing'
 import { computeSaleQuantity, shouldSell, truncateCurrency } from '../../domain/economy/sales'
-import { createInitialGameState } from '../../domain/game'
+import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST } from '../../domain/game'
 import { activateProject, canActivateProject, getVisibleProjects } from '../../domain/projects/projectRegistry'
 import {
   assignProbeTrust,
@@ -613,10 +613,58 @@ describe('early economy parity', () => {
 
     expect(withHarvester.earth.harvesterLevel).toBe(1)
     expect(withHarvester.earth.harvesterCost).toBeCloseTo(Math.pow(2, 2.25) * 1_000_000, 10)
+    expect(withHarvester.earth.harvesterBill).toBe(INITIAL_HARVESTER_COST)
     expect(withWireDrone.earth.wireDroneLevel).toBe(1)
     expect(withWireDrone.earth.wireDroneCost).toBeCloseTo(Math.pow(2, 2.25) * 1_000_000, 10)
+    expect(withWireDrone.earth.wireDroneBill).toBe(INITIAL_WIRE_DRONE_COST)
     expect(withFactory.earth.factoryLevel).toBe(1)
     expect(withFactory.earth.factoryCost).toBe(1_000_000_000)
+    expect(withFactory.earth.factoryBill).toBe(INITIAL_FACTORY_COST)
+  })
+
+  it('reboots harvesters, wire drones, and factories, zeroing levels and refunding clips', () => {
+    const base = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        unusedClips: 200_000_000,
+      },
+      earth: {
+        ...createInitialGameState().earth,
+        phase: 'postHuman' as const,
+        humanFlag: false,
+        harvesterFlag: true,
+        wireDroneFlag: true,
+        factoryFlag: true,
+      },
+    }
+
+    const withHarvesters = buyHarvester(buyHarvester(buyHarvester(base)))
+    const withDrones = buyWireDrone(buyWireDrone(withHarvesters))
+    const withFactories = buyFactory(buyFactory(withDrones))
+
+    const harvesterRefund = withHarvesters.earth.harvesterBill
+    const droneRefund = withDrones.earth.wireDroneBill
+    const factoryRefund = withFactories.earth.factoryBill
+
+    const rebootedHarvesters = rebootHarvesters(withHarvesters)
+    const rebootedDrones = rebootWireDrones(withDrones)
+    const rebootedFactory = rebootFactories(withFactories)
+
+    expect(rebootedHarvesters.earth.harvesterLevel).toBe(0)
+    expect(rebootedHarvesters.earth.harvesterCost).toBe(INITIAL_HARVESTER_COST)
+    expect(rebootedHarvesters.earth.harvesterBill).toBe(0)
+    expect(rebootedHarvesters.production.unusedClips).toBe(withHarvesters.production.unusedClips + harvesterRefund)
+
+    expect(rebootedDrones.earth.wireDroneLevel).toBe(0)
+    expect(rebootedDrones.earth.wireDroneCost).toBe(INITIAL_WIRE_DRONE_COST)
+    expect(rebootedDrones.earth.wireDroneBill).toBe(0)
+    expect(rebootedDrones.production.unusedClips).toBe(withDrones.production.unusedClips + droneRefund)
+
+    expect(rebootedFactory.earth.factoryLevel).toBe(0)
+    expect(rebootedFactory.earth.factoryCost).toBe(INITIAL_FACTORY_COST)
+    expect(rebootedFactory.earth.factoryBill).toBe(0)
+    expect(rebootedFactory.production.unusedClips).toBe(withFactories.production.unusedClips + factoryRefund)
   })
 
   it('buys solar farms and battery towers with original Earth power costs', () => {
@@ -639,8 +687,46 @@ describe('early economy parity', () => {
 
     expect(withFarm.earth.farmLevel).toBe(1)
     expect(withFarm.earth.farmCost).toBeCloseTo(Math.pow(2, 2.78) * 10_000_000, 10)
+    expect(withFarm.earth.farmBill).toBe(INITIAL_FARM_COST)
     expect(withBattery.earth.batteryLevel).toBe(1)
     expect(withBattery.earth.batteryCost).toBeCloseTo(Math.pow(2, 2.54) * 1_000_000, 10)
+    expect(withBattery.earth.batteryBill).toBe(INITIAL_BATTERY_COST)
+  })
+
+  it('reboots farms and battery towers, zeroing levels and refunding clips', () => {
+    const base = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        unusedClips: 10_000_000_000,
+      },
+      earth: {
+        ...createInitialGameState().earth,
+        phase: 'postHuman' as const,
+        humanFlag: false,
+        powerGridFlag: true,
+      },
+    }
+
+    const withFarm = buyFarm(buyFarm(base))
+    const withBattery = buyBattery(buyBattery(withFarm))
+
+    const farmRefund = withFarm.earth.farmBill
+    const batteryRefund = withBattery.earth.batteryBill
+
+    const rebootedFarm = rebootFarms(withFarm)
+    const rebootedBattery = rebootBatteries(withBattery)
+
+    expect(rebootedFarm.earth.farmLevel).toBe(0)
+    expect(rebootedFarm.earth.farmCost).toBe(INITIAL_FARM_COST)
+    expect(rebootedFarm.earth.farmBill).toBe(0)
+    expect(rebootedFarm.production.unusedClips).toBe(withFarm.production.unusedClips + farmRefund)
+
+    expect(rebootedBattery.earth.batteryLevel).toBe(0)
+    expect(rebootedBattery.earth.batteryCost).toBe(INITIAL_BATTERY_COST)
+    expect(rebootedBattery.earth.batteryBill).toBe(0)
+    expect(rebootedBattery.earth.storedPower).toBe(0)
+    expect(rebootedBattery.production.unusedClips).toBe(withBattery.production.unusedClips + batteryRefund)
   })
 
   it('runs Earth production from matter to wire to clips after post-human unlocks', () => {

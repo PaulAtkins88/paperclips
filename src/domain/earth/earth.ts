@@ -1,5 +1,5 @@
 import { getSwarmEfficiency } from '../compute/swarm'
-import type { GameState } from '../game'
+import { INITIAL_BATTERY_COST, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST, type GameState } from '../game'
 
 export const EARTH_TICK_MS = 100
 
@@ -71,8 +71,29 @@ export function buyFactory(state: GameState): GameState {
       factoryLevel: nextLevel,
       powMod: Math.max(1, state.earth.powMod),
       factoryCost: state.earth.factoryCost * multiplier,
+      factoryBill: state.earth.factoryBill + state.earth.factoryCost,
     },
     lastAction: 'Built a clip factory',
+  }
+}
+
+export function rebootFactories(state: GameState): GameState {
+  if (state.earth.factoryLevel === 0) {
+    return state
+  }
+
+  return {
+    ...state,
+    production: {
+      ...state.production,
+      unusedClips: state.production.unusedClips + state.earth.factoryBill,
+    },
+    earth: {
+      ...state.earth,
+      factoryLevel: 0,
+      factoryCost: INITIAL_FACTORY_COST,
+      factoryBill: 0,
+    },
   }
 }
 
@@ -93,9 +114,30 @@ export function buyFarm(state: GameState): GameState {
       ...state.earth,
       farmLevel: nextLevel,
       farmCost: Math.pow(nextLevel + 1, 2.78) * 10_000_000,
+      farmBill: state.earth.farmBill + state.earth.farmCost,
     },
     lastAction: 'Built a solar farm',
   })
+}
+
+export function rebootFarms(state: GameState): GameState {
+  if (state.earth.farmLevel === 0) {
+    return state
+  }
+
+  return {
+    ...state,
+    production: {
+      ...state.production,
+      unusedClips: state.production.unusedClips + state.earth.farmBill,
+    },
+    earth: {
+      ...state.earth,
+      farmLevel: 0,
+      farmCost: INITIAL_FARM_COST,
+      farmBill: 0,
+    },
+  }
 }
 
 export function buyBattery(state: GameState): GameState {
@@ -115,9 +157,31 @@ export function buyBattery(state: GameState): GameState {
       ...state.earth,
       batteryLevel: nextLevel,
       batteryCost: Math.pow(nextLevel + 1, 2.54) * 1_000_000,
+      batteryBill: state.earth.batteryBill + state.earth.batteryCost,
     },
     lastAction: 'Built a battery tower',
   })
+}
+
+export function rebootBatteries(state: GameState): GameState {
+  if (state.earth.batteryLevel === 0) {
+    return state
+  }
+
+  return {
+    ...state,
+    production: {
+      ...state.production,
+      unusedClips: state.production.unusedClips + state.earth.batteryBill,
+    },
+    earth: {
+      ...state.earth,
+      batteryLevel: 0,
+      batteryCost: INITIAL_BATTERY_COST,
+      batteryBill: 0,
+      storedPower: 0,
+    },
+  }
 }
 
 export function buyHarvester(state: GameState): GameState {
@@ -138,8 +202,29 @@ export function buyHarvester(state: GameState): GameState {
       harvesterLevel: nextLevel,
       powMod: Math.max(1, state.earth.powMod),
       harvesterCost: Math.pow(nextLevel + 1, 2.25) * 1_000_000,
+      harvesterBill: state.earth.harvesterBill + state.earth.harvesterCost,
     },
     lastAction: 'Built a harvester drone',
+  }
+}
+
+export function rebootHarvesters(state: GameState): GameState {
+  if (state.earth.harvesterLevel === 0) {
+    return state
+  }
+
+  return {
+    ...state,
+    production: {
+      ...state.production,
+      unusedClips: state.production.unusedClips + state.earth.harvesterBill,
+    },
+    earth: {
+      ...state.earth,
+      harvesterLevel: 0,
+      harvesterCost: INITIAL_HARVESTER_COST,
+      harvesterBill: 0,
+    },
   }
 }
 
@@ -161,8 +246,29 @@ export function buyWireDrone(state: GameState): GameState {
       wireDroneLevel: nextLevel,
       powMod: Math.max(1, state.earth.powMod),
       wireDroneCost: Math.pow(nextLevel + 1, 2.25) * 1_000_000,
+      wireDroneBill: state.earth.wireDroneBill + state.earth.wireDroneCost,
     },
     lastAction: 'Built a wire drone',
+  }
+}
+
+export function rebootWireDrones(state: GameState): GameState {
+  if (state.earth.wireDroneLevel === 0) {
+    return state
+  }
+
+  return {
+    ...state,
+    production: {
+      ...state.production,
+      unusedClips: state.production.unusedClips + state.earth.wireDroneBill,
+    },
+    earth: {
+      ...state.earth,
+      wireDroneLevel: 0,
+      wireDroneCost: INITIAL_WIRE_DRONE_COST,
+      wireDroneBill: 0,
+    },
   }
 }
 

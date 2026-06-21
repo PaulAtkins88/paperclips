@@ -37,7 +37,7 @@ import {
   type StockPosition,
 } from './investments/investments'
 import { computeDemand as computeDemandRule, normalizeClipPrice } from './economy/pricing'
-import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, runEarthTick } from './earth/earth'
+import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, rebootBatteries, rebootFactories, rebootFarms, rebootHarvesters, rebootWireDrones, runEarthTick } from './earth/earth'
 import {
   assignProbeTrust,
   increaseMaxTrust,
@@ -204,6 +204,11 @@ export interface GameEarth {
   factoryCost: number
   harvesterCost: number
   wireDroneCost: number
+  farmBill: number
+  batteryBill: number
+  factoryBill: number
+  harvesterBill: number
+  wireDroneBill: number
   farmRate: number
   batterySize: number
   factoryPowerRate: number
@@ -297,17 +302,17 @@ export const WIRE_PER_CLIP = 1
 export const INITIAL_WIRE = 1_000
 export const INITIAL_FUNDS = 0
 export const INITIAL_CLIP_PRICE = 0.25
+export const INITIAL_FACTORY_COST = 100_000_000
+export const INITIAL_HARVESTER_COST = 1_000_000
+export const INITIAL_WIRE_DRONE_COST = 1_000_000
+export const INITIAL_FARM_COST = 10_000_000
+export const INITIAL_BATTERY_COST = 1_000_000
 
 const INITIAL_MARKETING_LEVEL = 1
 const INITIAL_AD_COST = 100
 const INITIAL_WIRE_SUPPLY = 1_000
 const INITIAL_AVAILABLE_MATTER = Math.pow(10, 24) * 6_000
 const INITIAL_TOTAL_MATTER = 3 * Math.pow(10, 55)
-const INITIAL_FACTORY_COST = 100_000_000
-const INITIAL_HARVESTER_COST = 1_000_000
-const INITIAL_WIRE_DRONE_COST = 1_000_000
-const INITIAL_FARM_COST = 10_000_000
-const INITIAL_BATTERY_COST = 1_000_000
 const INITIAL_FARM_RATE = 50
 const INITIAL_BATTERY_SIZE = 10_000
 const INITIAL_FACTORY_POWER_RATE = 200
@@ -351,6 +356,11 @@ export type GameAction =
   | { type: 'setSwarmComputingBalance'; workThinkBalance: number }
   | { type: 'entertainSwarm' }
   | { type: 'synchronizeSwarm' }
+  | { type: 'rebootFactories' }
+  | { type: 'rebootHarvesters' }
+  | { type: 'rebootWireDrones' }
+  | { type: 'rebootFarms' }
+  | { type: 'rebootBatteries' }
   | { type: 'launchProbe' }
   | { type: 'increaseProbeTrust' }
   | { type: 'increaseMaxTrust' }
@@ -518,6 +528,11 @@ export function createInitialGameState(): GameState {
       factoryCost: INITIAL_FACTORY_COST,
       harvesterCost: INITIAL_HARVESTER_COST,
       wireDroneCost: INITIAL_WIRE_DRONE_COST,
+      farmBill: 0,
+      batteryBill: 0,
+      factoryBill: 0,
+      harvesterBill: 0,
+      wireDroneBill: 0,
       farmRate: INITIAL_FARM_RATE,
       batterySize: INITIAL_BATTERY_SIZE,
       factoryPowerRate: INITIAL_FACTORY_POWER_RATE,
@@ -598,6 +613,16 @@ export function reduceGameState(state: GameState, action: GameAction): GameState
       return entertainSwarm(state)
     case 'synchronizeSwarm':
       return synchronizeSwarm(state)
+    case 'rebootFactories':
+      return rebootFactories(state)
+    case 'rebootHarvesters':
+      return rebootHarvesters(state)
+    case 'rebootWireDrones':
+      return rebootWireDrones(state)
+    case 'rebootFarms':
+      return rebootFarms(state)
+    case 'rebootBatteries':
+      return rebootBatteries(state)
     case 'launchProbe':
       return launchProbe(state)
     case 'increaseProbeTrust':
