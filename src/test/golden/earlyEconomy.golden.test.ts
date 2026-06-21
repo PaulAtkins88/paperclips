@@ -10,7 +10,7 @@ import { cycleInvestmentRiskMode, investDeposit, investUpgrade, investWithdraw, 
 import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, EARTH_TICK_MS, getEarthPowerStatus, rebootBatteries, rebootFactories, rebootFarms, rebootHarvesters, rebootWireDrones, runEarthTick } from '../../domain/earth/earth'
 import { computeDemand, normalizeClipPrice } from '../../domain/economy/pricing'
 import { computeSaleQuantity, shouldSell, truncateCurrency } from '../../domain/economy/sales'
-import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST } from '../../domain/game'
+import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_BRIBE, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST } from '../../domain/game'
 import { activateProject, canActivateProject, getVisibleProjects } from '../../domain/projects/projectRegistry'
 import {
   assignProbeTrust,
@@ -518,6 +518,88 @@ describe('early economy parity', () => {
     expect(next.projects.project60).toBe(true)
     expect(next.strategy.strategies).toContain('A100')
     expect(next.strategy.tourneyCost).toBe(2_000)
+  })
+
+  it('shows Another Token of Goodwill only after project40, while trust < 100 and human phase', () => {
+    const base = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        clips: 101_000_000,
+        funds: INITIAL_BRIBE,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        trust: 86,
+      },
+      projects: {
+        ...createInitialGameState().projects,
+        project40: true,
+      },
+    }
+
+    expect(canActivateProject(base, 'project40b')).toBe(true)
+
+    const notYet = { ...base, projects: { ...base.projects, project40: false } }
+    expect(canActivateProject(notYet, 'project40b')).toBe(false)
+
+    const tooMuchTrust = { ...base, compute: { ...base.compute, trust: 100 } }
+    expect(canActivateProject(tooMuchTrust, 'project40b')).toBe(false)
+
+    const postHuman = { ...base, earth: { ...base.earth, humanFlag: false } }
+    expect(canActivateProject(postHuman, 'project40b')).toBe(false)
+  })
+
+  it('Another Token of Goodwill costs bribe dollars, adds 1 trust, and doubles the bribe', () => {
+    const state = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        funds: INITIAL_BRIBE * 4,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        trust: 86,
+        bribe: INITIAL_BRIBE,
+      },
+      projects: {
+        ...createInitialGameState().projects,
+        project40: true,
+      },
+    }
+
+    const first = activateProject(state, 'project40b')
+
+    expect(first.production.funds).toBe(INITIAL_BRIBE * 3)
+    expect(first.compute.trust).toBe(87)
+    expect(first.compute.bribe).toBe(INITIAL_BRIBE * 2)
+
+    const second = activateProject(first, 'project40b')
+
+    expect(second.production.funds).toBe(INITIAL_BRIBE)
+    expect(second.compute.trust).toBe(88)
+    expect(second.compute.bribe).toBe(INITIAL_BRIBE * 4)
+  })
+
+  it('Another Token of Goodwill does not activate when funds are below the bribe', () => {
+    const state = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        funds: INITIAL_BRIBE - 1,
+      },
+      compute: {
+        ...createInitialGameState().compute,
+        trust: 86,
+        bribe: INITIAL_BRIBE,
+      },
+      projects: {
+        ...createInitialGameState().projects,
+        project40: true,
+      },
+    }
+
+    expect(activateProject(state, 'project40b')).toBe(state)
   })
 
   it('releases the hypnodrones and ends the human economy', () => {
