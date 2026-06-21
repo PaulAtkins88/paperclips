@@ -316,6 +316,14 @@ export function selectSpaceScreenViewModel(state: GameState) {
   return {
     spaceUnlocked: state.earth.spaceFlag,
     availableProbeTrust: spaceStatus.availableProbeTrust,
+    canDeallocateSpeed: state.space.probeSpeed > 0,
+    canDeallocateNav: state.space.probeNav > 0,
+    canDeallocateRep: state.space.probeRep > 0,
+    canDeallocateHaz: state.space.probeHaz > 0,
+    canDeallocateFac: state.space.probeFac > 0,
+    canDeallocateHarv: state.space.probeHarv > 0,
+    canDeallocateWire: state.space.probeWire > 0,
+    canDeallocateCombat: state.space.probeCombat > 0,
     summaryRows: [
       { label: 'Transition', value: state.earth.spaceFlag ? 'Space phase active' : 'Post-human Earth' },
       { label: 'Available matter', value: formatNumber(state.earth.availableMatter) },
