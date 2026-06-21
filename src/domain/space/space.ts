@@ -666,8 +666,8 @@ function applyProbeTrustAllocation(state: GameState, target: ProbeTrustTarget, d
   }[target]
 
   const label = {
-    speed:   'Exploration',
-    nav:     'Navigation',
+    speed:   'Speed',
+    nav:     'Exploration',
     rep:     'Replication',
     haz:     'Hazard Remediation',
     fac:     'Factory Production',

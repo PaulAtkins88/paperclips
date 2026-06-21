@@ -14,6 +14,7 @@ import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_BRIBE, INITIAL_FA
 import { activateProject, canActivateProject, getVisibleProjects } from '../../domain/projects/projectRegistry'
 import {
   allocateProbeTrust,
+  deallocateProbeTrust,
   getSpaceStatus,
   increaseMaxTrust,
   increaseProbeTrust,
@@ -1732,6 +1733,90 @@ describe('early economy parity', () => {
     expect(locked.space.probeUsedTrust).toBe(0)
     expect(unlocked.space.probeCombat).toBe(1)
     expect(unlocked.space.probeUsedTrust).toBe(1)
+  })
+
+  it('deallocateProbeTrust reduces target field and probeUsedTrust by 1', () => {
+    const base = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        humanFlag: false,
+        spaceFlag: true,
+      },
+      space: {
+        ...createInitialGameState().space,
+        probeTrust: 2,
+        probeUsedTrust: 2,
+        probeSpeed: 1,
+        probeNav: 1,
+      },
+    }
+
+    const after = deallocateProbeTrust(base, 'speed')
+
+    expect(after.space.probeSpeed).toBe(0)
+    expect(after.space.probeUsedTrust).toBe(1)
+    expect(after.space.probeNav).toBe(1)
+  })
+
+  it('deallocateProbeTrust is a no-op when target trust is already 0', () => {
+    const base = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        humanFlag: false,
+        spaceFlag: true,
+      },
+      space: {
+        ...createInitialGameState().space,
+        probeTrust: 1,
+        probeUsedTrust: 1,
+        probeSpeed: 0,
+        probeNav: 1,
+      },
+    }
+
+    const after = deallocateProbeTrust(base, 'speed')
+
+    expect(after).toBe(base)
+  })
+
+  it('deallocateProbeTrust is a no-op when spaceFlag is false', () => {
+    const base = {
+      ...createInitialGameState(),
+      space: {
+        ...createInitialGameState().space,
+        probeTrust: 1,
+        probeUsedTrust: 1,
+        probeSpeed: 1,
+      },
+    }
+
+    const after = deallocateProbeTrust(base, 'speed')
+
+    expect(after).toBe(base)
+  })
+
+  it('deallocateProbeTrust combat is a no-op when project131 is not unlocked', () => {
+    const base = {
+      ...createInitialGameState(),
+      earth: {
+        ...createInitialGameState().earth,
+        humanFlag: false,
+        spaceFlag: true,
+      },
+      space: {
+        ...createInitialGameState().space,
+        probeTrust: 2,
+        probeUsedTrust: 2,
+        probeCombat: 1,
+        probeSpeed: 1,
+      },
+    }
+
+    const after = deallocateProbeTrust(base, 'combat')
+
+    expect(after).toBe(base)
   })
 
   it('allows probes to destroy drifters once Combat trust is allocated', () => {

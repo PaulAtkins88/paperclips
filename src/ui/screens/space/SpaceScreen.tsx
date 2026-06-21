@@ -45,49 +45,49 @@ export function SpaceScreen({ state, dispatch }: SpaceScreenProps) {
           <Button disabled={!viewModel.spaceUnlocked || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'speed' })} type="button" variant="secondary">
             Add Speed
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || state.space.probeSpeed  === 0} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'speed' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !viewModel.canDeallocateSpeed} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'speed' })} type="button" variant="secondary">
             Remove Speed
           </Button>
           <Button disabled={!viewModel.spaceUnlocked || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'nav' })} type="button" variant="secondary">
             Add Exploration
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || state.space.probeNav === 0} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'nav' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !viewModel.canDeallocateNav} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'nav' })} type="button" variant="secondary">
             Remove Exploration
           </Button>
           <Button disabled={!viewModel.spaceUnlocked || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'rep' })} type="button" variant="secondary">
             Add Replication
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || state.space.probeRep === 0} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'rep' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !viewModel.canDeallocateRep} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'rep' })} type="button" variant="secondary">
             Remove Replication
           </Button>
           <Button disabled={!viewModel.spaceUnlocked || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'haz' })} type="button" variant="secondary">
             Add Hazard Remediation
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || state.space.probeHaz === 0} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'haz' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !viewModel.canDeallocateHaz} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'haz' })} type="button" variant="secondary">
             Remove Hazard Remediation
           </Button>
           <Button disabled={!viewModel.spaceUnlocked || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'fac' })} type="button" variant="secondary">
             Add Factory
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || state.space.probeFac === 0} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'fac' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !viewModel.canDeallocateFac} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'fac' })} type="button" variant="secondary">
             Remove Factory
           </Button>
           <Button disabled={!viewModel.spaceUnlocked || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'harv' })} type="button" variant="secondary">
             Add Harvester
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || state.space.probeHarv === 0} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'harv' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !viewModel.canDeallocateHarv} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'harv' })} type="button" variant="secondary">
             Remove Harvester
           </Button>
           <Button disabled={!viewModel.spaceUnlocked || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'wire' })} type="button" variant="secondary">
             Add Wire Drone
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || state.space.probeWire === 0} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'wire' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !viewModel.canDeallocateWire} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'wire' })} type="button" variant="secondary">
             Remove Wire Drone
           </Button>
           <Button disabled={!viewModel.spaceUnlocked || !state.projects.project131 || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'combat' })} type="button" variant="secondary">
             Add Combat
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || !state.projects.project131 || state.space.probeCombat === 0} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'combat' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !state.projects.project131 || !viewModel.canDeallocateCombat} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'combat' })} type="button" variant="secondary">
             Remove Combat
           </Button>
         </div>
