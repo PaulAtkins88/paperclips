@@ -681,7 +681,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
         trust: state.compute.trust + 1,
         bribe: state.compute.bribe * 2,
       },
-      lastAction: 'Completed another Token of Goodwill',
+      lastAction: 'Completed Another Token of Goodwill',
     }),
   },
   {
