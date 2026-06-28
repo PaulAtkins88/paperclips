@@ -7,6 +7,7 @@ import { Button, CardGrid, InfoRow, PanelCard } from '../../system'
 import { SwarmPanel } from '../../components/SwarmPanel'
 import { QChipVisualizer } from '../../components/QChipVisualizer'
 import { useShowQOps } from '../../../application/game/useShowQOps'
+import { canCreateTournament, canRunTournament, getTournamentRoundNumber, getTournamentTotalRounds } from '../../../domain/strategy/tournaments'
 
 interface IndustryScreenProps {
   state: GameState
@@ -240,7 +241,10 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
             Run tournaments to generate Yomi after Strategic Modeling unlocks, then expand the strategy set through projects.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <Button disabled={!state.strategy.unlocked || state.compute.operations < state.strategy.tourneyCost} onClick={() => dispatch({ type: 'runTournament' })} type="button">
+            <Button disabled={!canCreateTournament(state)} onClick={() => dispatch({ type: 'createNewTournament' })} type="button">
+              Create tournament
+            </Button>
+            <Button disabled={!canRunTournament(state)} onClick={() => dispatch({ type: 'runTournament' })} type="button">
               Run tournament
             </Button>
             <Button disabled={!state.strategy.unlocked} onClick={() => dispatch({ type: 'cycleStrategySelection' })} type="button" variant="secondary">
@@ -250,6 +254,44 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
               {state.strategy.autoTourneyEnabled ? 'Disable AutoTourney' : 'Enable AutoTourney'}
             </Button>
           </div>
+          {state.strategy.tourneyStarted && (
+            <p>Round {getTournamentRoundNumber(state)} / {getTournamentTotalRounds(state)}</p>
+          )}
+          {state.strategy.lastPayoffMatrix ? (
+            <table className="mt-3 w-full text-sm text-slate-300">
+              <thead>
+                <tr>
+                  <th />
+                  <th className="text-center font-normal pb-1">Move A</th>
+                  <th className="text-center font-normal pb-1">Move B</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="text-right pr-2">Move A</td>
+                  <td className="text-center border border-slate-600 p-1">{state.strategy.lastPayoffMatrix.AA},{state.strategy.lastPayoffMatrix.AA}</td>
+                  <td className="text-center border border-slate-600 p-1">{state.strategy.lastPayoffMatrix.AB},{state.strategy.lastPayoffMatrix.BA}</td>
+                </tr>
+                <tr>
+                  <td className="text-right pr-2">Move B</td>
+                  <td className="text-center border border-slate-600 p-1">{state.strategy.lastPayoffMatrix.BA},{state.strategy.lastPayoffMatrix.AB}</td>
+                  <td className="text-center border border-slate-600 p-1">{state.strategy.lastPayoffMatrix.BB},{state.strategy.lastPayoffMatrix.BB}</td>
+                </tr>
+              </tbody>
+            </table>
+          ) : null}
+          {state.strategy.lastResults.length > 0 ? (
+            <ol className="mt-3 list-decimal list-inside columns-2 gap-x-6 text-sm text-slate-300">
+              {state.strategy.lastResults.map(result => (
+                <li key={result.id} className={result.id === state.strategy.selectedStrategy ? 'font-bold text-white' : undefined}>
+                  <div className="inline-flex justify-between w-[calc(100%-1.5rem)]">
+                    <span>{result.id}</span>
+                    <span>{result.score}</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : null}
           <p className="mt-3 text-xs uppercase tracking-[0.2em] text-slate-500">{viewModel.strategyNote}</p>
         </PanelCard>
       ) : null}

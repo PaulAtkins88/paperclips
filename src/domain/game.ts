@@ -51,7 +51,9 @@ import {
 import { createInitialWireMarket } from './economy/wireMarket'
 import { activateProject, canActivateProject, countCompletedProjects, countTotalProjects, getVisibleProjects } from './projects/projectRegistry'
 import {
+  canCreateTournament,
   canRunTournament,
+  createNewTournament,
   cycleStrategySelection,
   formatStrategyLabel,
   runStrategyTick,
@@ -168,6 +170,9 @@ export interface GameStrategy {
   yomiBoost: number
   tourneyCost: number
   tourneyLevel: number
+  tourneyInProgress: boolean
+  tourneyStarted: boolean
+  tourneyElapsedMs: number
   autoTourneyEnabled: boolean
   resultsTimer: number
   lastResults: TournamentResult[]
@@ -378,6 +383,7 @@ export type GameAction =
   | { type: 'investWithdraw' }
   | { type: 'investUpgrade' }
   | { type: 'cycleInvestmentRisk' }
+  | { type: 'createNewTournament' }
   | { type: 'runTournament' }
   | { type: 'cycleStrategySelection' }
   | { type: 'toggleAutoTourney' }
@@ -497,6 +503,9 @@ export function createInitialGameState(): GameState {
       yomiBoost: 1,
       tourneyCost: 1_000,
       tourneyLevel: 1,
+      tourneyInProgress: false,
+      tourneyStarted: false,
+      tourneyElapsedMs: 0,
       autoTourneyEnabled: false,
       resultsTimer: 0,
       lastResults: [],
@@ -654,8 +663,10 @@ export function reduceGameState(state: GameState, action: GameAction): GameState
       return investUpgrade(state)
     case 'cycleInvestmentRisk':
       return cycleInvestmentRiskMode(state)
+    case 'createNewTournament':
+      return createNewTournament(state, Math.random)
     case 'runTournament':
-      return runTournament(state, Math.random)
+      return runTournament(state)
     case 'cycleStrategySelection':
       return cycleStrategySelection(state)
     case 'toggleAutoTourney':
@@ -822,7 +833,7 @@ export function getStallState(state: GameState): { stalled: boolean; reason: str
   const canInvest = synced.earth.humanFlag && synced.investment.unlocked && synced.production.funds > 0
   const canWithdrawInvestment = synced.earth.humanFlag && synced.investment.unlocked && synced.investment.bankroll > 0
   const canUpgradeInvestment = synced.earth.humanFlag && synced.investment.unlocked && synced.strategy.yomi >= synced.investment.investUpgradeCost
-  const canRunManualTournament = canRunTournament(synced)
+  const canRunManualTournament = canCreateTournament(synced) || canRunTournament(synced)
   const canManualProduce = synced.earth.humanFlag && synced.production.wire >= WIRE_PER_CLIP
   const canBuyFactory = !synced.earth.humanFlag && synced.earth.factoryFlag && synced.production.unusedClips >= synced.earth.factoryCost
   const canBuyHarvester = !synced.earth.humanFlag && synced.earth.harvesterFlag && synced.production.unusedClips >= synced.earth.harvesterCost
