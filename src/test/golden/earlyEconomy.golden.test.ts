@@ -7,7 +7,7 @@ import { calculateQuantumOps, createInitialQChips, quantumCompute } from '../../
 import { computeAutoClipperCost, computeMegaClipperCost } from '../../domain/economy/clippers'
 import { applyManualClipProduction, applyWirePurchaseToEconomy, runEarlyEconomyTick, syncEarlyEconomyState } from '../../domain/economy/earlyEconomy'
 import { cycleInvestmentRiskMode, investDeposit, investUpgrade, investWithdraw, runInvestmentTick } from '../../domain/investments/investments'
-import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, EARTH_TICK_MS, getEarthPowerStatus, rebootBatteries, rebootFactories, rebootFarms, rebootHarvesters, rebootWireDrones, runEarthTick } from '../../domain/earth/earth'
+import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, EARTH_TICK_MS, getBatteryCost, getDroneCost, getEarthPowerStatus, getFarmCost, rebootBatteries, rebootFactories, rebootFarms, rebootHarvesters, rebootWireDrones, runEarthTick } from '../../domain/earth/earth'
 import { computeDemand, normalizeClipPrice } from '../../domain/economy/pricing'
 import { computeSaleQuantity, shouldSell, truncateCurrency } from '../../domain/economy/sales'
 import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_BRIBE, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST } from '../../domain/game'
@@ -690,19 +690,57 @@ describe('early economy parity', () => {
       },
     }
 
-    const withHarvester = buyHarvester(base)
-    const withWireDrone = buyWireDrone(withHarvester)
-    const withFactory = buyFactory(withWireDrone)
+    const withHarvester = buyHarvester(base, 2)
+    const withWireDrone = buyWireDrone(base, 2)
+    const withFactory = buyFactory(base)
 
-    expect(withHarvester.earth.harvesterLevel).toBe(1)
-    expect(withHarvester.earth.harvesterCost).toBeCloseTo(Math.pow(2, 2.25) * 1_000_000, 10)
-    expect(withHarvester.earth.harvesterBill).toBe(INITIAL_HARVESTER_COST)
-    expect(withWireDrone.earth.wireDroneLevel).toBe(1)
-    expect(withWireDrone.earth.wireDroneCost).toBeCloseTo(Math.pow(2, 2.25) * 1_000_000, 10)
-    expect(withWireDrone.earth.wireDroneBill).toBe(INITIAL_WIRE_DRONE_COST)
+    const secondHarvesterCost = Math.pow(2, 2.25) * 1_000_000
+    const expectedHarvesterBill = INITIAL_HARVESTER_COST + secondHarvesterCost
+    const nextHarvesterCost = Math.pow(3, 2.25) * 1_000_000
+    expect(withHarvester.earth.harvesterLevel).toBe(2)
+    expect(withHarvester.production.unusedClips).toBeCloseTo(200_000_000 - expectedHarvesterBill, 10)
+    expect(withHarvester.earth.harvesterCost).toBeCloseTo(nextHarvesterCost, 10)
+    expect(withHarvester.earth.harvesterBill).toBe(expectedHarvesterBill)
+    const secondWireDroneCost = Math.pow(2, 2.25) * 1_000_000
+    const expectedWireDroneBill = INITIAL_WIRE_DRONE_COST + secondWireDroneCost
+    const nextWireDroneCost = Math.pow(3, 2.25) * 1_000_000
+    expect(withWireDrone.earth.wireDroneLevel).toBe(2)
+    expect(withWireDrone.production.unusedClips).toBeCloseTo(200_000_000 - expectedWireDroneBill, 10)
+    expect(withWireDrone.earth.wireDroneCost).toBeCloseTo(nextWireDroneCost, 10)
+    expect(withWireDrone.earth.wireDroneBill).toBeCloseTo(expectedWireDroneBill, 10)
+    const expectedFactoryBill = INITIAL_FACTORY_COST
+    expect(withFactory.production.unusedClips).toBeCloseTo(200_000_000 - expectedFactoryBill, 10)
     expect(withFactory.earth.factoryLevel).toBe(1)
     expect(withFactory.earth.factoryCost).toBe(1_000_000_000)
-    expect(withFactory.earth.factoryBill).toBe(INITIAL_FACTORY_COST)
+    expect(withFactory.earth.factoryBill).toBe(expectedFactoryBill)
+  })
+
+  it('prices bulk post-human purchases as the sum of what each individual unit would have cost', () => {
+    const postHuman = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        unusedClips: 100_000_000_000_000,
+      },
+      earth: {
+        ...createInitialGameState().earth,
+        phase: 'postHuman' as const,
+        humanFlag: false,
+        harvesterFlag: true,
+        wireDroneFlag: true,
+        powerGridFlag: true,
+      },
+    }
+    const withInitialResources = buyFarm(buyBattery(buyHarvester(postHuman)), 2)
+
+    const harvesterCost = getDroneCost(withInitialResources.earth.harvesterLevel, 2)
+    expect(harvesterCost).toBeCloseTo(4756828.460010884 + 11844666.116572432, 10)
+
+    const farmCost = getFarmCost(withInitialResources.earth.farmLevel, 3)
+    expect(farmCost).toBeCloseTo(212029890.04061982 + 471766149.5331522 + 877276734.6866684, 10)
+
+    const batteryCost = getBatteryCost(withInitialResources.earth.batteryLevel, 4)
+    expect(batteryCost).toBeCloseTo(5815890.069281243 + 16288758.596227521 + 33824577.29796418 + 59618879.71094047, 10)
   })
 
   it('reboot functions are no-ops when the level is already 0', () => {
@@ -770,8 +808,8 @@ describe('early economy parity', () => {
       },
     }
 
-    const withHarvesters = buyHarvester(buyHarvester(buyHarvester(base)))
-    const withDrones = buyWireDrone(buyWireDrone(withHarvesters))
+    const withHarvesters = buyHarvester(base, 3)
+    const withDrones = buyWireDrone(withHarvesters, 2)
     const withFactories = buyFactory(buyFactory(withDrones))
 
     const harvesterRefund = withHarvesters.earth.harvesterBill
@@ -813,15 +851,23 @@ describe('early economy parity', () => {
       },
     }
 
-    const withFarm = buyFarm(base)
-    const withBattery = buyBattery(withFarm)
+    const withFarm = buyFarm(base, 2)
+    const withBattery = buyBattery(base, 2)
 
-    expect(withFarm.earth.farmLevel).toBe(1)
-    expect(withFarm.earth.farmCost).toBeCloseTo(Math.pow(2, 2.78) * 10_000_000, 10)
-    expect(withFarm.earth.farmBill).toBe(INITIAL_FARM_COST)
-    expect(withBattery.earth.batteryLevel).toBe(1)
-    expect(withBattery.earth.batteryCost).toBeCloseTo(Math.pow(2, 2.54) * 1_000_000, 10)
-    expect(withBattery.earth.batteryBill).toBe(INITIAL_BATTERY_COST)
+    const secondFarmCost = Math.pow(2, 2.78) * 10_000_000
+    const expectedFarmBill = INITIAL_FARM_COST + secondFarmCost
+    const nextFarmCost = Math.pow(3, 2.78) * 10_000_000
+    expect(withFarm.production.unusedClips).toBeCloseTo(200_000_000 - expectedFarmBill, 10)
+    expect(withFarm.earth.farmLevel).toBe(2)
+    expect(withFarm.earth.farmCost).toBeCloseTo(nextFarmCost, 10)
+    expect(withFarm.earth.farmBill).toBe(expectedFarmBill)
+    const secondBatteryCost = Math.pow(2, 2.54) * 1_000_000
+    const expectedBatteryBill = INITIAL_BATTERY_COST + secondBatteryCost
+    const nextBatteryCost = Math.pow(3, 2.54) * 1_000_000
+    expect(withBattery.production.unusedClips).toBeCloseTo(200_000_000 - expectedBatteryBill, 10)
+    expect(withBattery.earth.batteryLevel).toBe(2)
+    expect(withBattery.earth.batteryCost).toBeCloseTo(nextBatteryCost, 10)
+    expect(withBattery.earth.batteryBill).toBe(expectedBatteryBill)
   })
 
   it('reboots farms and battery towers, zeroing levels and refunding clips', () => {
@@ -839,8 +885,8 @@ describe('early economy parity', () => {
       },
     }
 
-    const withFarm = buyFarm(buyFarm(base))
-    const withBattery = buyBattery(buyBattery(withFarm))
+    const withFarm = buyFarm(base, 2)
+    const withBattery = buyBattery(withFarm, 2)
 
     const farmRefund = withFarm.earth.farmBill
     const batteryRefund = withBattery.earth.batteryBill
