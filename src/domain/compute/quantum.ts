@@ -18,7 +18,7 @@ export function createInitialQChips(): QChip[] {
 }
 
 export function calculateQuantumOps(state: GameState): GameState {
-  if (!state.projects.project50) return state
+  if (!state.projects.project50.completed) return state
 
   const qClock = state.compute.qClock + 0.01
 
@@ -38,7 +38,7 @@ export function calculateQuantumOps(state: GameState): GameState {
 }
 
 export function quantumCompute(state: GameState): GameState {
-  if (!state.projects.project50 || !state.compute.qChips.some(c => c.active)) {
+  if (!state.projects.project50.completed || !state.compute.qChips.some(c => c.active)) {
     return state
   }
 

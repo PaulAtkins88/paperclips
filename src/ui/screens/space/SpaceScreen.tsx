@@ -84,10 +84,10 @@ export function SpaceScreen({ state, dispatch }: SpaceScreenProps) {
           <Button disabled={!viewModel.spaceUnlocked || !viewModel.canDeallocateWire} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'wire' })} type="button" variant="secondary">
             Remove Wire Drone
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || !state.projects.project131 || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'combat' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !state.projects.project131.completed || viewModel.availableProbeTrust <= 0} onClick={() => dispatch({ type: 'allocateProbeTrust', target: 'combat' })} type="button" variant="secondary">
             Add Combat
           </Button>
-          <Button disabled={!viewModel.spaceUnlocked || !state.projects.project131 || !viewModel.canDeallocateCombat} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'combat' })} type="button" variant="secondary">
+          <Button disabled={!viewModel.spaceUnlocked || !state.projects.project131.completed || !viewModel.canDeallocateCombat} onClick={() => dispatch({ type: 'deallocateProbeTrust', target: 'combat' })} type="button" variant="secondary">
             Remove Combat
           </Button>
         </div>

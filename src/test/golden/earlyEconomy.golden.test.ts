@@ -10,8 +10,8 @@ import { cycleInvestmentRiskMode, investDeposit, investUpgrade, investWithdraw, 
 import { buyBattery, buyFactory, buyFarm, buyHarvester, buyWireDrone, EARTH_TICK_MS, getEarthPowerStatus, rebootBatteries, rebootFactories, rebootFarms, rebootHarvesters, rebootWireDrones, runEarthTick } from '../../domain/earth/earth'
 import { computeDemand, normalizeClipPrice } from '../../domain/economy/pricing'
 import { computeSaleQuantity, shouldSell, truncateCurrency } from '../../domain/economy/sales'
-import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_BRIBE, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST } from '../../domain/game'
-import { activateProject, canActivateProject, getVisibleProjects } from '../../domain/projects/projectRegistry'
+import { createInitialGameState, INITIAL_BATTERY_COST, INITIAL_BRIBE, INITIAL_FACTORY_COST, INITIAL_FARM_COST, INITIAL_HARVESTER_COST, INITIAL_WIRE_DRONE_COST, reduceGameState } from '../../domain/game'
+import { activateProject, canActivateProject, getVisibleProjects, triggerProjects } from '../../domain/projects/projectRegistry'
 import {
   allocateProbeTrust,
   deallocateProbeTrust,
@@ -180,7 +180,7 @@ describe('early economy parity', () => {
         ...initialGameState,
         projects: {
           ...initialGameState.projects,
-          project50: true,
+          project50: { triggered: true, completed: true },
         },
         compute: {
           ...initialGameState.compute,
@@ -211,7 +211,7 @@ describe('early economy parity', () => {
       ...createInitialGameState(),
       projects: {
         ...createInitialGameState().projects,
-        project50: true,
+        project50: { triggered: true, completed: true },
       },
       compute: {
         ...createInitialGameState().compute,
@@ -243,7 +243,7 @@ describe('early economy parity', () => {
       ...createInitialGameState(),
       projects: {
         ...createInitialGameState().projects,
-        project50: true,
+        project50: { triggered: true, completed: true },
       },
       compute: {
         ...createInitialGameState().compute,
@@ -332,6 +332,28 @@ describe('early economy parity', () => {
     expect(next.compute.standardOps).toBe(0)
   })
 
+  it('maintains project visibility after projects are triggered', () => {
+    const beforeTrigger = triggerProjects({
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        funds: 990_000,
+      },
+      investment: {
+        ...createInitialGameState().investment,
+        unlocked: true,
+        bankroll: 10_000,
+        portTotal: 10_000,
+      }
+    })
+    const initiallyVisible = getVisibleProjects(beforeTrigger)
+    expect(initiallyVisible.map(project => project.id)).toContain('project37')
+
+    const afterWithdraw = reduceGameState(beforeTrigger, { type: 'investWithdraw' })
+    const stillVisible = getVisibleProjects(afterWithdraw)
+    expect(stillVisible.map(project => project.id)).toContain('project37')
+  })
+
   it('shows and activates improved autoclippers when the original trigger is met', () => {
     const state = {
       ...createInitialGameState(),
@@ -353,7 +375,7 @@ describe('early economy parity', () => {
 
     const next = activateProject(state, 'project1')
 
-    expect(next.projects.project1).toBe(true)
+    expect(next.projects.project1.completed).toBe(true)
     expect(next.economy.clipperBoost).toBeCloseTo(1.25, 10)
     expect(next.compute.standardOps).toBe(0)
   })
@@ -373,7 +395,7 @@ describe('early economy parity', () => {
 
     const next = activateProject(state, 'project3')
 
-    expect(next.projects.project3).toBe(true)
+    expect(next.projects.project3.completed).toBe(true)
     expect(next.compute.creativityOn).toBe(true)
     expect(next.compute.standardOps).toBe(0)
   })
@@ -394,7 +416,7 @@ describe('early economy parity', () => {
 
     const next = activateProject(state, 'project2')
 
-    expect(next.projects.project2).toBe(true)
+    expect(next.projects.project2.completed).toBe(true)
     expect(next.production.wire).toBe(next.economy.wireSupply)
     expect(next.compute.trust).toBe(1)
   })
@@ -476,7 +498,7 @@ describe('early economy parity', () => {
       ...createInitialGameState(),
       projects: {
         ...createInitialGameState().projects,
-        project19: true,
+        project19: { triggered: true, completed: true },
       },
       compute: {
         ...createInitialGameState().compute,
@@ -501,7 +523,7 @@ describe('early economy parity', () => {
       ...createInitialGameState(),
       projects: {
         ...createInitialGameState().projects,
-        project20: true,
+        project20: { triggered: true, completed: true },
       },
       strategy: {
         ...createInitialGameState().strategy,
@@ -516,7 +538,7 @@ describe('early economy parity', () => {
 
     const next = activateProject(state, 'project60')
 
-    expect(next.projects.project60).toBe(true)
+    expect(next.projects.project60.completed).toBe(true)
     expect(next.strategy.strategies).toContain('A100')
     expect(next.strategy.tourneyCost).toBe(2_000)
   })
@@ -535,13 +557,13 @@ describe('early economy parity', () => {
       },
       projects: {
         ...createInitialGameState().projects,
-        project40: true,
+        project40: { triggered: true, completed: true },
       },
     }
 
     expect(canActivateProject(base, 'project40b')).toBe(true)
 
-    const notYet = { ...base, projects: { ...base.projects, project40: false } }
+    const notYet = { ...base, projects: { ...base.projects, project40: { triggered: true, completed: false } } }
     expect(canActivateProject(notYet, 'project40b')).toBe(false)
 
     const tooMuchTrust = { ...base, compute: { ...base.compute, trust: 100 } }
@@ -565,7 +587,7 @@ describe('early economy parity', () => {
       },
       projects: {
         ...createInitialGameState().projects,
-        project40: true,
+        project40: { triggered: true, completed: true },
       },
     }
 
@@ -596,7 +618,7 @@ describe('early economy parity', () => {
       },
       projects: {
         ...createInitialGameState().projects,
-        project40: true,
+        project40: { triggered: true, completed: true },
       },
     }
 
@@ -608,7 +630,7 @@ describe('early economy parity', () => {
       ...createInitialGameState(),
       projects: {
         ...createInitialGameState().projects,
-        project70: true,
+        project70: { triggered: true, completed: true },
       },
       production: {
         ...createInitialGameState().production,
@@ -628,7 +650,7 @@ describe('early economy parity', () => {
 
     const next = activateProject(state, 'project35')
 
-    expect(next.projects.project35).toBe(true)
+    expect(next.projects.project35.completed).toBe(true)
     expect(next.earth.humanFlag).toBe(false)
     expect(next.earth.phase).toBe('postHuman')
     expect(next.compute.trust).toBe(0)
@@ -643,8 +665,8 @@ describe('early economy parity', () => {
       ...createInitialGameState(),
       projects: {
         ...createInitialGameState().projects,
-        project17: true,
-        project35: true,
+        project17: { triggered: true, completed: true },
+        project35: { triggered: true, completed: true },
       },
       earth: {
         ...createInitialGameState().earth,
@@ -1145,11 +1167,11 @@ describe('early economy parity', () => {
       },
       projects: {
         ...createInitialGameState().projects,
-        project35: true,
-        project41: true,
-        project43: true,
-        project44: true,
-        project45: true,
+        project35: { triggered: true, completed: true },
+        project41: { triggered: true, completed: true },
+        project43: { triggered: true, completed: true },
+        project44: { triggered: true, completed: true },
+        project45: { triggered: true, completed: true },
       },
       compute: {
         ...createInitialGameState().compute,
@@ -1177,7 +1199,7 @@ describe('early economy parity', () => {
 
     const next = activateProject(state, 'project46')
 
-    expect(next.projects.project46).toBe(true)
+    expect(next.projects.project46.completed).toBe(true)
     expect(next.earth.spaceFlag).toBe(true)
     expect(next.earth.farmLevel).toBe(1)
     expect(next.earth.batteryLevel).toBe(0)
@@ -1540,7 +1562,7 @@ describe('early economy parity', () => {
       ...state,
       projects: {
         ...state.projects,
-        project129: true,
+        project129: { triggered: true, completed: true },
       },
     }, 100)
     const status = getSpaceStatus(state)
@@ -1607,7 +1629,7 @@ describe('early economy parity', () => {
     const next = activateProject(state, 'project129')
 
     expect(hazardProject?.canActivate).toBe(true)
-    expect(next.projects.project129).toBe(true)
+    expect(next.projects.project129.completed).toBe(true)
     expect(next.compute.operations).toBe(75_000)
   })
 
@@ -1702,7 +1724,7 @@ describe('early economy parity', () => {
     const next = activateProject(state, 'project131')
 
     expect(combatProject?.canActivate).toBe(true)
-    expect(next.projects.project131).toBe(true)
+    expect(next.projects.project131.completed).toBe(true)
     expect(next.compute.operations).toBe(50_000)
   })
 
@@ -1725,7 +1747,7 @@ describe('early economy parity', () => {
       ...base,
       projects: {
         ...base.projects,
-        project131: true,
+        project131: { triggered: true, completed: true },
       },
     }, 'combat')
 
@@ -1833,7 +1855,7 @@ describe('early economy parity', () => {
         },
         projects: {
           ...createInitialGameState().projects,
-          project131: true,
+          project131: { triggered: true, completed: true },
         },
         space: {
           ...createInitialGameState().space,
@@ -1865,7 +1887,7 @@ describe('early economy parity', () => {
       },
       projects: {
         ...createInitialGameState().projects,
-        project131: true,
+        project131: { triggered: true, completed: true },
       },
       compute: {
         ...createInitialGameState().compute,
@@ -1890,12 +1912,12 @@ describe('early economy parity', () => {
     const withOoda = activateProject(state, 'project120')
     const withNames = activateProject(state, 'project121')
 
-    expect(withOoda.projects.project120).toBe(true)
+    expect(withOoda.projects.project120.completed).toBe(true)
     expect(withOoda.strategy.yomi).toBe(15_000)
     expect(withOoda.compute.operations).toBe(125_000)
     expect(withOoda.space.attackSpeedFlag).toBe(true)
 
-    expect(withNames.projects.project121).toBe(true)
+    expect(withNames.projects.project121.completed).toBe(true)
     expect(withNames.compute.creativity).toBe(75_000)
     expect(withNames.space.battleNameFlag).toBe(true)
     expect(withNames.space.battleEndTimer).toBe(200)
@@ -1911,7 +1933,7 @@ describe('early economy parity', () => {
       },
       projects: {
         ...createInitialGameState().projects,
-        project121: true,
+        project121: { triggered: true, completed: true },
       },
       compute: {
         ...createInitialGameState().compute,
@@ -1972,9 +1994,9 @@ describe('early economy parity', () => {
         },
         projects: {
           ...createInitialGameState().projects,
-          project131: true,
-          project121: true,
-          project134: true,
+          project131: { triggered: true, completed: true },
+          project121: { triggered: true, completed: true },
+          project134: { triggered: true, completed: true },
         },
         space: {
           ...createInitialGameState().space,
@@ -2029,7 +2051,7 @@ describe('early economy parity', () => {
         },
         projects: {
           ...createInitialGameState().projects,
-          project131: true,
+          project131: { triggered: true, completed: true },
         },
         space: {
           ...createInitialGameState().space,
@@ -2046,7 +2068,7 @@ describe('early economy parity', () => {
         ...base,
         projects: {
           ...base.projects,
-          project120: true,
+          project120: { triggered: true, completed: true },
         },
         space: {
           ...base.space,
@@ -2066,7 +2088,7 @@ describe('early economy parity', () => {
     const activeChips = createInitialQChips().map(c => ({ ...c, active: true }))
     const state = {
       ...createInitialGameState(),
-      projects: { ...createInitialGameState().projects, project50: true },
+      projects: { ...createInitialGameState().projects, project50: { triggered: true, completed: true } },
       compute: {
         ...createInitialGameState().compute,
         qClock,
@@ -2088,7 +2110,7 @@ describe('early economy parity', () => {
     const qClock = 2.5
     const state = {
       ...createInitialGameState(),
-      projects: { ...createInitialGameState().projects, project50: true },
+      projects: { ...createInitialGameState().projects, project50: { triggered: true, completed: true } },
       compute: { ...createInitialGameState().compute, qClock, qChips: createInitialQChips() },
     }
 
@@ -2106,7 +2128,7 @@ describe('early economy parity', () => {
   })
 
   it('project50 (Quantum Computing) is visible at 5 processors and costs 10,000 ops', () => {
-    const state = {
+    const state = triggerProjects({
       ...createInitialGameState(),
       compute: {
         ...createInitialGameState().compute,
@@ -2114,13 +2136,13 @@ describe('early economy parity', () => {
         operations: 10_000,
         standardOps: 10_000,
       },
-    }
+    })
 
     expect(getVisibleProjects(state).some(p => p.id === 'project50')).toBe(true)
     expect(canActivateProject(state, 'project50')).toBe(true)
 
     const next = activateProject(state, 'project50')
-    expect(next.projects.project50).toBe(true)
+    expect(next.projects.project50.completed).toBe(true)
     expect(next.compute.standardOps).toBe(0)
   })
 
@@ -2136,7 +2158,7 @@ describe('early economy parity', () => {
     const initialCost = 10_000
     const state = {
       ...createInitialGameState(),
-      projects: { ...createInitialGameState().projects, project50: true },
+      projects: { ...createInitialGameState().projects, project50: { triggered: true, completed: true } },
       compute: {
         ...createInitialGameState().compute,
         qChips: createInitialQChips(),
@@ -2159,7 +2181,7 @@ describe('early economy parity', () => {
     const allActiveChips = createInitialQChips().map(c => ({ ...c, active: true }))
     const state = {
       ...createInitialGameState(),
-      projects: { ...createInitialGameState().projects, project50: true },
+      projects: { ...createInitialGameState().projects, project50: { triggered: true, completed: true } },
       compute: {
         ...createInitialGameState().compute,
         qChips: allActiveChips,
@@ -2195,7 +2217,7 @@ describe('early economy parity', () => {
     const negativeOps = -12_000
     const state = {
       ...createInitialGameState(),
-      projects: { ...createInitialGameState().projects, project50: true },
+      projects: { ...createInitialGameState().projects, project50: { triggered: true, completed: true } },
       compute: {
         ...createInitialGameState().compute,
         operations: negativeOps,
@@ -2205,8 +2227,8 @@ describe('early economy parity', () => {
 
     const next = activateProject(state, 'project217')
 
-    expect(next.projects.project217).toBe(true)
-    expect(next.projects.project50).toBe(false)
+    expect(next.projects.project217.completed).toBe(true)
+    expect(next.projects.project50).toEqual({ triggered: false, completed: false })
     expect(next.compute.standardOps).toBe(negativeOps + 10_000)
     expect(next.production.clips).toBe(0)
   })

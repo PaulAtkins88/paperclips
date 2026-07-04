@@ -144,7 +144,7 @@ export function cycleStrategySelection(state: GameState): GameState {
 }
 
 export function toggleAutoTourney(state: GameState): GameState {
-  if (!state.projects.project118) {
+  if (!state.projects.project118.completed) {
     return state
   }
 
