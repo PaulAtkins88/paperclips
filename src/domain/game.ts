@@ -824,6 +824,7 @@ export function getStallState(state: GameState): { stalled: boolean; reason: str
   const canUpgradeInvestment = synced.earth.humanFlag && synced.investment.unlocked && synced.strategy.yomi >= synced.investment.investUpgradeCost
   const canRunManualTournament = canRunTournament(synced)
   const canManualProduce = synced.earth.humanFlag && synced.production.wire >= WIRE_PER_CLIP
+  const canUnlockPostHumanResources = !synced.earth.humanFlag && !synced.projects.project18 && synced.compute.memory >= 45
   const canBuyFactory = !synced.earth.humanFlag && synced.earth.factoryFlag && synced.production.unusedClips >= synced.earth.factoryCost
   const canBuyHarvester = !synced.earth.humanFlag && synced.earth.harvesterFlag && synced.production.unusedClips >= synced.earth.harvesterCost
   const canBuyWireDrone = !synced.earth.humanFlag && synced.earth.wireDroneFlag && synced.production.unusedClips >= synced.earth.wireDroneCost
@@ -844,6 +845,7 @@ export function getStallState(state: GameState): { stalled: boolean; reason: str
     && !canWithdrawInvestment
     && !canUpgradeInvestment
     && !canRunManualTournament
+    && !canUnlockPostHumanResources
     && !canBuyFactory
     && !canBuyHarvester
     && !canBuyWireDrone
