@@ -7,6 +7,7 @@
 - [ ] `pnpm test`
 - [ ] `pnpm build`
 - [ ] `pnpm lint`
+- [ ] Added a `CHANGELOG.md` entry under `## Unreleased` (or N/A — no user-facing change)
 
 ## Notes
 
