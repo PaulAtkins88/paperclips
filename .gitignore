@@ -31,3 +31,7 @@ lerna-debug.log*
 .turbo/
 .cache/
 vite.svg
+
+# Claude Code: share skills and agents, keep permissions personal
+.claude/settings.json
+.claude/settings.local.json
