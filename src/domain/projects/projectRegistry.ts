@@ -1079,6 +1079,23 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     }),
   },
   {
+    id: 'project102',
+    title: 'Self-correcting Supply Chain',
+    description: 'Each factory added to the network increases every factory\'s output 1,000x.',
+    isVisible: (state) => state.earth.factoryLevel >= 50 && !state.projects.project102,
+    canActivate: (state) => state.production.unusedClips >= 1e21,
+    getCost: () => [{ amount: 1e21, unit: 'clips' }],
+    apply: (state) => markProjectComplete(state, 'project102', {
+      production: {
+        unusedClips: state.production.unusedClips - 1e21,
+      },
+      earth: {
+        factoryBoost: 1000,
+      },
+      lastAction: 'Self-correcting factories online. Each factory added to the network increases every factory\'s output 1,000x.',
+    }),
+  },
+  {
     id: 'project110',
     title: 'Drone Flocking: Collision Avoidance',
     description: 'All drones 100x more effective.',
@@ -1110,6 +1127,23 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
         wireDroneRate: state.earth.wireDroneRate * 1_000,
       },
       lastAction: 'Completed Drone Flocking: Alignment',
+    }),
+  },
+  {
+    id: 'project112',
+    title: 'Drone Flocking: Adversarial Cohesion',
+    description: 'Each drone added to the flock doubles every drone\'s output.',
+    isVisible: (state) => (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 50_000 && !state.projects.project112,
+    canActivate: (state) => state.strategy.yomi >= 50_000,
+    getCost: () => [{ amount: 50_000, unit: 'yomi' }],
+    apply: (state) => markProjectComplete(state, 'project112', {
+      strategy: {
+        yomi: state.strategy.yomi - 50_000,
+      },
+      earth: {
+        droneBoost: 2,
+      },
+      lastAction: 'Adversarial cohesion online. Each drone added to the flock increases every drone\'s output 2x.',
     }),
   },
   {
