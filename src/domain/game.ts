@@ -290,7 +290,7 @@ export interface GameProject {
 }
 
 export interface GameState {
-  version: 10
+  version: 11
   elapsedMs: number
   paused: boolean
   production: GameProduction
@@ -310,7 +310,11 @@ export interface GameState {
   phase: GamePhase
 }
 
-export const GAME_VERSION = 10
+// Bumped to 11 when `projects` changed from Record<ProjectId, boolean> to
+// Record<ProjectId, GameProject>. The bump matters in both directions: it stops
+// a v10 save being misread as the new shape, and stops a v11 save being read by
+// older code, where every project object would evaluate truthy and read as complete.
+export const GAME_VERSION = 11
 export const WIRE_UNIT_LABEL = 'inches'
 export const WIRE_BATCH_UNIT = 1_000
 export const WIRE_PER_CLIP = 1
