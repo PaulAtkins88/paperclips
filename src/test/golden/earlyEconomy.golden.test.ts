@@ -863,6 +863,57 @@ describe('early economy parity', () => {
     expect(h3.earth.harvesterBill).toBeCloseTo(expectedBill, 10)
   })
 
+  it('rejects quantity < 1 for bulk post-human purchases', () => {
+    const base = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        unusedClips: 1_000_000_000,
+      },
+      earth: {
+        ...createInitialGameState().earth,
+        phase: 'postHuman' as const,
+        humanFlag: false,
+        powerGridFlag: true,
+        harvesterFlag: true,
+        wireDroneFlag: true,
+        farmLevel: 2,
+        batteryLevel: 2,
+        harvesterLevel: 2,
+        wireDroneLevel: 2,
+      },
+    }
+
+    for (const quantity of [-5, 0] as const) {
+      expect(buyFarm(base, quantity)).toBe(base)
+      expect(buyBattery(base, quantity)).toBe(base)
+      expect(buyHarvester(base, quantity)).toBe(base)
+      expect(buyWireDrone(base, quantity)).toBe(base)
+    }
+  })
+
+  it('matches bulk harvester purchase cost to sequential singles', () => {
+    const base = {
+      ...createInitialGameState(),
+      production: {
+        ...createInitialGameState().production,
+        unusedClips: 1_000_000_000,
+      },
+      earth: {
+        ...createInitialGameState().earth,
+        phase: 'postHuman' as const,
+        humanFlag: false,
+        harvesterFlag: true,
+      },
+    }
+
+    const sequential = buyHarvester(buyHarvester(buyHarvester(base)))
+    const bulk = buyHarvester(base, 3)
+
+    expect(bulk.earth).toEqual(sequential.earth)
+    expect(bulk.production.unusedClips).toBe(sequential.production.unusedClips)
+  })
+
   it('reboots harvesters, wire drones, and factories, zeroing levels and refunding clips', () => {
     const base = {
       ...createInitialGameState(),
