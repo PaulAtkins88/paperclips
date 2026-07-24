@@ -123,7 +123,7 @@ export function increaseProbeTrust(state: GameState): GameState {
 }
 
 export function increaseMaxTrust(state: GameState): GameState {
-  if (!state.projects.project121 || state.space.honor < state.space.maxTrustCost) {
+  if (!state.projects.project121.completed || state.space.honor < state.space.maxTrustCost) {
     return state
   }
 
@@ -139,7 +139,7 @@ export function increaseMaxTrust(state: GameState): GameState {
 }
 
 export function allocateProbeTrust(state: GameState, target: ProbeTrustTarget): GameState {
-  if (!state.earth.spaceFlag || state.space.probeUsedTrust >= state.space.probeTrust || (target === 'combat' && !state.projects.project131)) {
+  if (!state.earth.spaceFlag || state.space.probeUsedTrust >= state.space.probeTrust || (target === 'combat' && !state.projects.project131.completed)) {
     return state
   }
   return applyProbeTrustAllocation(state, target, 1)
@@ -156,7 +156,7 @@ export function deallocateProbeTrust(state: GameState, target: ProbeTrustTarget)
     wire: state.space.probeWire,
     combat: state.space.probeCombat,
   }[target]
-  if (!state.earth.spaceFlag || currentTargetTrust === 0 || (target === 'combat' && !state.projects.project131)) {
+  if (!state.earth.spaceFlag || currentTargetTrust === 0 || (target === 'combat' && !state.projects.project131.completed)) {
     return state
   }
   return applyProbeTrustAllocation(state, target, -1)
@@ -513,7 +513,7 @@ function resolveBattle(state: GameState, random: () => number): GameState {
 function finalizeBattle(state: GameState, battle: SpaceBattle): GameState {
   let nextState = state
 
-  if (state.projects.project121) {
+  if (state.projects.project121.completed) {
     if (battle.leftShips <= 0) {
       nextState = {
         ...nextState,
@@ -533,7 +533,7 @@ function finalizeBattle(state: GameState, battle: SpaceBattle): GameState {
           ...nextState.space,
           honor: nextState.space.honor + honorReward,
           honorReward,
-          bonusHonor: nextState.projects.project134 ? nextState.space.bonusHonor + 10 : nextState.space.bonusHonor,
+          bonusHonor: nextState.projects.project134.completed ? nextState.space.bonusHonor + 10 : nextState.space.bonusHonor,
         },
         lastAction: `Won the battle of ${battle.name}`,
       }
@@ -599,7 +599,7 @@ function getHazardLossRate(state: GameState): number {
   const boost = Math.pow(state.space.probeHaz, 1.6)
   let amount = state.space.probeCount * (PROBE_HAZARD_BASE_RATE / ((3 * boost) + 1))
 
-  if (state.projects.project129) {
+  if (state.projects.project129.completed) {
     amount *= 0.5
   }
 

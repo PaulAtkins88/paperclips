@@ -33,7 +33,7 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
         disabled={!state.earth.humanFlag}
         note={viewModel.automationNote}
         secondaryLabel="Buy mega-clipper"
-        secondaryTooltip={state.projects.project22 ? 'Buy one MegaClipper.' : 'Unlock MegaClippers via the project chain first.'}
+        secondaryTooltip={state.projects.project22.completed ? 'Buy one MegaClipper.' : 'Unlock MegaClippers via the project chain first.'}
         onSecondary={() => dispatch({ type: 'buyMegaClipper' })}
       />
 
@@ -250,7 +250,7 @@ export function IndustryScreen({ state, dispatch, demand, priceInputRef, onOpenP
             <Button disabled={!state.strategy.unlocked} onClick={() => dispatch({ type: 'cycleStrategySelection' })} type="button" variant="secondary">
               {viewModel.selectedStrategyLabel}
             </Button>
-            <Button disabled={!state.projects.project118} onClick={() => dispatch({ type: 'toggleAutoTourney' })} type="button" variant="secondary">
+            <Button disabled={!state.projects.project118.completed} onClick={() => dispatch({ type: 'toggleAutoTourney' })} type="button" variant="secondary">
               {state.strategy.autoTourneyEnabled ? 'Disable AutoTourney' : 'Enable AutoTourney'}
             </Button>
           </div>

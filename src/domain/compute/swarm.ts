@@ -40,7 +40,7 @@ function isSwarmActive(state: GameState): boolean {
   if (boredomFlag) return false
   if (disorgFlag) return false
   if (state.earth.powMod === 0) return false
-  if (state.earth.spaceFlag && !state.projects.project130) return false
+  if (state.earth.spaceFlag && !state.projects.project130.completed) return false
 
   return true
 }
@@ -123,7 +123,7 @@ export function getDroneStatus(state: GameState): SwarmStatus {
   if (state.compute.boredomFlag) return 'Bored'
   if (getTotalDroneCount(state) === 1) return 'Lonely'
   if (getTotalDroneCount(state) === 0) return 'No drones'
-  if (state.earth.spaceFlag && !state.projects.project130) return 'No response'
+  if (state.earth.spaceFlag && !state.projects.project130.completed) return 'No response'
   if (state.earth.powMod === 0 || !state.compute.swarmFlag) return 'Sleeping'
   return 'Active'
 }

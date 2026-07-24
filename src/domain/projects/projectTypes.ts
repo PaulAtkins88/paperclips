@@ -88,7 +88,7 @@ export interface ProjectDefinition {
   id: ProjectId
   title: string
   description: string
-  isVisible: (state: GameState) => boolean
+  isTriggered: (state: GameState) => boolean
   canActivate: (state: GameState) => boolean
   getCost: (state: GameState) => ProjectCost[]
   apply: (state: GameState) => GameState

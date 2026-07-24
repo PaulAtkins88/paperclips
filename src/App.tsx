@@ -51,7 +51,7 @@ function App() {
       tabs.push({ id: 'space', label: 'Space' })
     }
 
-    if (state.projects.project131) {
+    if (state.projects.project131.completed) {
       tabs.push({ id: 'combat', label: 'Combat' })
     }
 

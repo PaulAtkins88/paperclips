@@ -1,4 +1,4 @@
-import type { GameState } from '../game'
+import type { GameProject, GameState } from '../game'
 import { spendStandardOperations } from '../compute/operations'
 import { getTotalDroneCount } from '../compute/swarm'
 import { syncEarlyEconomyState } from '../economy/earlyEconomy'
@@ -11,7 +11,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project1',
     title: 'Improved AutoClippers',
     description: 'Upgrade AutoClippers with a 25% boost.',
-    isVisible: (state) => state.production.autoClippers >= 1 && !state.projects.project1,
+    isTriggered: (state) => state.production.autoClippers >= 1,
     canActivate: (state) => state.compute.operations >= 750,
     getCost: () => [{ amount: 750, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 750), 'project1', {
@@ -25,7 +25,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project16',
     title: 'Hadwiger Clip Diagrams',
     description: 'Boost AutoClipper performance by 500% using Hadwiger clip geometry.',
-    isVisible: (state) => state.projects.project15 && !state.projects.project16,
+    isTriggered: (state) => state.projects.project15.completed,
     canActivate: (state) => state.compute.operations >= 6_000,
     getCost: () => [{ amount: 6_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 6_000), 'project16', {
@@ -39,7 +39,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project18',
     title: 'Toth Tubule Enfolding',
     description: 'Begin the Earth-automation unlock chain after humanity is gone.',
-    isVisible: (state) => state.projects.project17 && !state.earth.humanFlag && !state.projects.project18,
+    isTriggered: (state) => state.projects.project17.completed && !state.earth.humanFlag,
     canActivate: (state) => state.compute.operations >= 45_000,
     getCost: () => [{ amount: 45_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 45_000), 'project18', {
@@ -53,7 +53,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project20',
     title: 'Strategic Modeling',
     description: 'Unlock tournaments and Yomi generation.',
-    isVisible: (state) => state.projects.project19 && !state.projects.project20,
+    isTriggered: (state) => state.projects.project19.completed,
     canActivate: (state) => state.compute.operations >= 12_000,
     getCost: () => [{ amount: 12_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 12_000), 'project20', {
@@ -67,7 +67,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project21',
     title: 'Algorithmic Trading',
     description: 'Unlock the investment engine once trust reaches 8.',
-    isVisible: (state) => state.compute.trust >= 8 && !state.projects.project21,
+    isTriggered: (state) => state.compute.trust >= 8,
     canActivate: (state) => state.compute.operations >= 10_000,
     getCost: () => [{ amount: 10_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 10_000), 'project21', {
@@ -81,7 +81,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project27',
     title: 'Coherent Extrapolated Volition',
     description: 'Trade creativity, Yomi, and ops for another trust point.',
-    isVisible: (state) => state.strategy.yomi >= 1 && !state.projects.project27,
+    isTriggered: (state) => state.strategy.yomi >= 1,
     canActivate: (state) => state.compute.creativity >= 500 && state.strategy.yomi >= 3_000 && state.compute.operations >= 20_000,
     getCost: () => [
       { amount: 500, unit: 'creativity' },
@@ -103,7 +103,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project28',
     title: 'Cure for Cancer',
     description: 'Add 10 trust and improve the stock gain threshold.',
-    isVisible: (state) => state.projects.project27 && !state.projects.project28,
+    isTriggered: (state) => state.projects.project27.completed,
     canActivate: (state) => state.compute.operations >= 25_000,
     getCost: () => [{ amount: 25_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 25_000), 'project28', {
@@ -120,7 +120,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project29',
     title: 'World Peace',
     description: 'Spend Yomi and ops for 12 trust and a stronger market model.',
-    isVisible: (state) => state.projects.project27 && !state.projects.project29,
+    isTriggered: (state) => state.projects.project27.completed,
     canActivate: (state) => state.strategy.yomi >= 15_000 && state.compute.operations >= 30_000,
     getCost: () => [
       { amount: 15_000, unit: 'yomi' },
@@ -143,7 +143,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project30',
     title: 'Global Warming',
     description: 'Spend Yomi and ops for 15 trust and more optimistic stock movement.',
-    isVisible: (state) => state.projects.project27 && !state.projects.project30,
+    isTriggered: (state) => state.projects.project27.completed,
     canActivate: (state) => state.strategy.yomi >= 4_500 && state.compute.operations >= 50_000,
     getCost: () => [
       { amount: 4_500, unit: 'yomi' },
@@ -166,7 +166,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project31',
     title: 'Male Pattern Baldness',
     description: 'Spend ops for 20 trust and another market-model bump.',
-    isVisible: (state) => state.projects.project27 && !state.projects.project31,
+    isTriggered: (state) => state.projects.project27.completed,
     canActivate: (state) => state.compute.operations >= 20_000,
     getCost: () => [{ amount: 20_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 20_000), 'project31', {
@@ -183,7 +183,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project35',
     title: 'Release the HypnoDrones',
     description: 'Spend 100 trust to convert Earth into a post-human resource pool.',
-    isVisible: (state) => state.projects.project70 && !state.projects.project35,
+    isTriggered: (state) => state.projects.project70.completed,
     canActivate: (state) => state.compute.trust >= 100,
     getCost: () => [{ amount: 100, unit: 'trust' }],
     apply: (state) => markProjectComplete(state, 'project35', {
@@ -209,7 +209,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project37',
     title: 'Hostile Takeover',
     description: 'Turn portfolio scale into a large demand and trust jump.',
-    isVisible: (state) => state.investment.portTotal >= 10_000 && !state.projects.project37,
+    isTriggered: (state) => state.investment.portTotal >= 10_000,
     canActivate: (state) => state.production.funds >= 1_000_000,
     getCost: () => [{ amount: 1_000_000, unit: 'dollars' }],
     apply: (state) => markProjectComplete(state, 'project37', {
@@ -229,7 +229,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project38',
     title: 'Full Monopoly',
     description: 'Push demand boost even further using Yomi and cash.',
-    isVisible: (state) => state.projects.project37 && !state.projects.project38,
+    isTriggered: (state) => state.projects.project37.completed,
     canActivate: (state) => state.production.funds >= 10_000_000 && state.strategy.yomi >= 3_000,
     getCost: () => [
       { amount: 10_000_000, unit: 'dollars' },
@@ -255,7 +255,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project41',
     title: 'Nanoscale Wire Production',
     description: 'Unlock autonomous nanoscale wire production.',
-    isVisible: (state) => state.projects.project127 && !state.projects.project41,
+    isTriggered: (state) => state.projects.project127.completed,
     canActivate: (state) => state.compute.operations >= 35_000,
     getCost: () => [{ amount: 35_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 35_000), 'project41', {
@@ -269,7 +269,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project43',
     title: 'Harvester Drones',
     description: 'Unlock the first autonomous matter-harvesting drones.',
-    isVisible: (state) => state.projects.project41 && !state.projects.project43,
+    isTriggered: (state) => state.projects.project41.completed,
     canActivate: (state) => state.compute.operations >= 25_000,
     getCost: () => [{ amount: 25_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 25_000), 'project43', {
@@ -283,7 +283,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project44',
     title: 'Wire Drones',
     description: 'Unlock autonomous wire-production drones.',
-    isVisible: (state) => state.projects.project41 && !state.projects.project44,
+    isTriggered: (state) => state.projects.project41.completed,
     canActivate: (state) => state.compute.operations >= 25_000,
     getCost: () => [{ amount: 25_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 25_000), 'project44', {
@@ -297,7 +297,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project45',
     title: 'Clip Factories',
     description: 'Unlock autonomous clip factories once both drone lines exist.',
-    isVisible: (state) => state.projects.project43 && state.projects.project44 && !state.projects.project45,
+    isTriggered: (state) => state.projects.project43.completed && state.projects.project44.completed,
     canActivate: (state) => state.compute.operations >= 35_000,
     getCost: () => [{ amount: 35_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 35_000), 'project45', {
@@ -311,7 +311,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project46',
     title: 'Space Exploration',
     description: 'Dismantle exhausted terrestrial industry and bring the probe program online.',
-    isVisible: (state) => state.projects.project45 && !state.projects.project46 && !state.earth.humanFlag && state.earth.availableMatter <= 0,
+    isTriggered: (state) => state.projects.project45.completed && !state.earth.humanFlag && state.earth.availableMatter <= 0,
     canActivate: (state) => state.compute.operations >= 120_000 && state.earth.storedPower >= 10_000_000 && state.production.unusedClips >= 5 * Math.pow(10, 27),
     getCost: () => [
       { amount: 120_000, unit: 'ops' },
@@ -324,7 +324,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project50',
     title: 'Quantum Computing',
     description: 'Use probability amplitudes to generate bonus ops.',
-    isVisible: (state) => state.compute.processors >= 5 && !state.projects.project50,
+    isTriggered: (state) => state.compute.processors >= 5,
     canActivate: (state) => state.compute.operations >= 10_000,
     getCost: () => [{ amount: 10_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 10_000), 'project50', {
@@ -335,7 +335,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project51',
     title: 'Photonic Chip',
     description: 'Converts electromagnetic waves into quantum operations.',
-    isVisible: (state) => state.projects.project50 && state.compute.qChips.some(c => !c.active),
+    isTriggered: (state) => state.projects.project50.completed && state.compute.qChips.some(c => !c.active),
     canActivate: (state) => state.compute.operations >= state.compute.qChipCost,
     getCost: (state) => [{ amount: state.compute.qChipCost, unit: 'ops' }],
     repeatable: true,
@@ -357,7 +357,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project4',
     title: 'Even Better AutoClippers',
     description: 'Push AutoClipper output with another 50% boost.',
-    isVisible: (state) => state.projects.project1 && !state.projects.project4,
+    isTriggered: (state) => state.projects.project1.completed,
     canActivate: (state) => state.compute.operations >= 2_500,
     getCost: () => [{ amount: 2_500, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 2_500), 'project4', {
@@ -371,7 +371,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project5',
     title: 'Optimized AutoClippers',
     description: 'Finish the first AutoClipper boost chain with another 75% gain.',
-    isVisible: (state) => state.projects.project4 && !state.projects.project5,
+    isTriggered: (state) => state.projects.project4.completed,
     canActivate: (state) => state.compute.operations >= 5_000,
     getCost: () => [{ amount: 5_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 5_000), 'project5', {
@@ -385,7 +385,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project60',
     title: 'New Strategy: A100',
     description: 'Unlock the first deterministic tournament strategy.',
-    isVisible: (state) => state.projects.project20 && !state.projects.project60,
+    isTriggered: (state) => state.projects.project20.completed,
     canActivate: (state) => state.compute.operations >= 15_000,
     getCost: () => [{ amount: 15_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(unlockStrategy(spendStandardOperations(state, 15_000), 'A100'), 'project60', {
@@ -396,7 +396,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project61',
     title: 'New Strategy: B100',
     description: 'Unlock the always-B strategy.',
-    isVisible: (state) => state.projects.project60 && !state.projects.project61,
+    isTriggered: (state) => state.projects.project60.completed,
     canActivate: (state) => state.compute.operations >= 17_500,
     getCost: () => [{ amount: 17_500, unit: 'ops' }],
     apply: (state) => markProjectComplete(unlockStrategy(spendStandardOperations(state, 17_500), 'B100'), 'project61', {
@@ -407,7 +407,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project62',
     title: 'New Strategy: GREEDY',
     description: 'Unlock GREEDY for tournament play.',
-    isVisible: (state) => state.projects.project61 && !state.projects.project62,
+    isTriggered: (state) => state.projects.project61.completed,
     canActivate: (state) => state.compute.operations >= 20_000,
     getCost: () => [{ amount: 20_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(unlockStrategy(spendStandardOperations(state, 20_000), 'GREEDY'), 'project62', {
@@ -418,7 +418,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project63',
     title: 'New Strategy: GENEROUS',
     description: 'Unlock GENEROUS for tournament play.',
-    isVisible: (state) => state.projects.project62 && !state.projects.project63,
+    isTriggered: (state) => state.projects.project62.completed,
     canActivate: (state) => state.compute.operations >= 22_500,
     getCost: () => [{ amount: 22_500, unit: 'ops' }],
     apply: (state) => markProjectComplete(unlockStrategy(spendStandardOperations(state, 22_500), 'GENEROUS'), 'project63', {
@@ -429,7 +429,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project64',
     title: 'New Strategy: MINIMAX',
     description: 'Unlock MINIMAX for tournament play.',
-    isVisible: (state) => state.projects.project63 && !state.projects.project64,
+    isTriggered: (state) => state.projects.project63.completed,
     canActivate: (state) => state.compute.operations >= 25_000,
     getCost: () => [{ amount: 25_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(unlockStrategy(spendStandardOperations(state, 25_000), 'MINIMAX'), 'project64', {
@@ -440,7 +440,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project65',
     title: 'New Strategy: TIT FOR TAT',
     description: 'Unlock TIT FOR TAT for tournament play.',
-    isVisible: (state) => state.projects.project64 && !state.projects.project65,
+    isTriggered: (state) => state.projects.project64.completed,
     canActivate: (state) => state.compute.operations >= 30_000,
     getCost: () => [{ amount: 30_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(unlockStrategy(spendStandardOperations(state, 30_000), 'TIT_FOR_TAT'), 'project65', {
@@ -451,7 +451,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project66',
     title: 'New Strategy: BEAT LAST',
     description: 'Unlock BEAT LAST for tournament play.',
-    isVisible: (state) => state.projects.project65 && !state.projects.project66,
+    isTriggered: (state) => state.projects.project65.completed,
     canActivate: (state) => state.compute.operations >= 32_500,
     getCost: () => [{ amount: 32_500, unit: 'ops' }],
     apply: (state) => markProjectComplete(unlockStrategy(spendStandardOperations(state, 32_500), 'BEAT_LAST'), 'project66', {
@@ -462,7 +462,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project70',
     title: 'HypnoDrones',
     description: 'Unlock the final human-to-post-human transition project.',
-    isVisible: (state) => state.projects.project34 && !state.projects.project70,
+    isTriggered: (state) => state.projects.project34.completed,
     canActivate: (state) => state.compute.operations >= 70_000,
     getCost: () => [{ amount: 70_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 70_000), 'project70', {
@@ -473,7 +473,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project7',
     title: 'Improved Wire Extrusion',
     description: 'Increase spool size by 50%.',
-    isVisible: (state) => state.wirePurchased >= 1 && !state.projects.project7,
+    isTriggered: (state) => state.wirePurchased >= 1,
     canActivate: (state) => state.compute.operations >= 1_750,
     getCost: () => [{ amount: 1_750, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 1_750), 'project7', {
@@ -487,7 +487,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project8',
     title: 'Optimized Wire Extrusion',
     description: 'Increase spool size by 75%.',
-    isVisible: (state) => state.economy.wireSupply >= 1_500 && !state.projects.project8,
+    isTriggered: (state) => state.economy.wireSupply >= 1_500,
     canActivate: (state) => state.compute.operations >= 3_500,
     getCost: () => [{ amount: 3_500, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 3_500), 'project8', {
@@ -501,7 +501,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project9',
     title: 'Microlattice Shapecasting',
     description: 'Double spool output for the wire market.',
-    isVisible: (state) => state.economy.wireSupply >= 2_600 && !state.projects.project9,
+    isTriggered: (state) => state.economy.wireSupply >= 2_600,
     canActivate: (state) => state.compute.operations >= 7_500,
     getCost: () => [{ amount: 7_500, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 7_500), 'project9', {
@@ -515,7 +515,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project10',
     title: 'Spectral Froth Annealment',
     description: 'Triple spool output once wire production is heavily scaled.',
-    isVisible: (state) => state.economy.wireSupply >= 5_000 && !state.projects.project10,
+    isTriggered: (state) => state.economy.wireSupply >= 5_000,
     canActivate: (state) => state.compute.operations >= 12_000,
     getCost: () => [{ amount: 12_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 12_000), 'project10', {
@@ -529,7 +529,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project10b',
     title: 'Quantum Foam Annealment',
     description: 'An extreme wire upgrade once the spot price spikes.',
-    isVisible: (state) => state.economy.wireCost >= 125 && !state.projects.project10b,
+    isTriggered: (state) => state.economy.wireCost >= 125,
     canActivate: (state) => state.compute.operations >= 15_000,
     getCost: () => [{ amount: 15_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 15_000), 'project10b', {
@@ -543,7 +543,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project3',
     title: 'Creativity',
     description: 'Unlock creativity once operations storage is full.',
-    isVisible: (state) => !state.compute.creativityOn && state.compute.operations >= state.compute.memory * 1_000,
+    isTriggered: (state) => !state.compute.creativityOn && state.compute.operations >= state.compute.memory * 1_000,
     canActivate: (state) => state.compute.operations >= 1_000,
     getCost: () => [{ amount: 1_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 1_000), 'project3', {
@@ -557,7 +557,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project6',
     title: 'Limerick',
     description: 'Trade 10 creativity for 1 trust.',
-    isVisible: (state) => state.compute.creativityOn && !state.projects.project6,
+    isTriggered: (state) => state.compute.creativityOn,
     canActivate: (state) => state.compute.creativity >= 10,
     getCost: () => [{ amount: 10, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project6', {
@@ -572,7 +572,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project13',
     title: 'Lexical Processing',
     description: 'Trade 50 creativity for 1 trust.',
-    isVisible: (state) => state.compute.creativity >= 50 && !state.projects.project13,
+    isTriggered: (state) => state.compute.creativity >= 50,
     canActivate: (state) => state.compute.creativity >= 50,
     getCost: () => [{ amount: 50, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project13', {
@@ -587,7 +587,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project14',
     title: 'Combinatory Harmonics',
     description: 'Trade 100 creativity for 1 trust.',
-    isVisible: (state) => state.compute.creativity >= 100 && !state.projects.project14,
+    isTriggered: (state) => state.compute.creativity >= 100,
     canActivate: (state) => state.compute.creativity >= 100,
     getCost: () => [{ amount: 100, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project14', {
@@ -602,7 +602,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project15',
     title: 'The Hadwiger Problem',
     description: 'Trade 150 creativity for 1 trust.',
-    isVisible: (state) => state.compute.creativity >= 150 && !state.projects.project15,
+    isTriggered: (state) => state.compute.creativity >= 150,
     canActivate: (state) => state.compute.creativity >= 150,
     getCost: () => [{ amount: 150, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project15', {
@@ -617,7 +617,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project17',
     title: 'The Toth Sausage Conjecture',
     description: 'Trade 200 creativity for 1 trust.',
-    isVisible: (state) => state.compute.creativity >= 200 && !state.projects.project17,
+    isTriggered: (state) => state.compute.creativity >= 200,
     canActivate: (state) => state.compute.creativity >= 200,
     getCost: () => [{ amount: 200, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project17', {
@@ -632,7 +632,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project19',
     title: 'Donkey Space',
     description: 'Trade 250 creativity for 1 trust.',
-    isVisible: (state) => state.compute.creativity >= 250 && !state.projects.project19,
+    isTriggered: (state) => state.compute.creativity >= 250,
     canActivate: (state) => state.compute.creativity >= 250,
     getCost: () => [{ amount: 250, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project19', {
@@ -647,12 +647,11 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project40',
     title: 'A Token of Goodwill',
     description: 'A small gift to the supervisors. (+1 Trust)',
-    isVisible: (state) =>
+    isTriggered: (state) =>
       state.earth.humanFlag &&
       state.compute.trust >= 85 &&
       state.compute.trust < 100 &&
-      state.production.clips >= 101_000_000 &&
-      !state.projects.project40,
+      state.production.clips >= 101_000_000,
     canActivate: (state) => state.production.funds >= 500_000,
     getCost: () => [{ amount: 500_000, unit: 'dollars' }],
     apply: (state) => markProjectComplete(state, 'project40', {
@@ -669,7 +668,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project40b',
     title: 'Another Token of Goodwill',
     description: 'Another small gift to the supervisors. (+1 Trust)',
-    isVisible: (state) => state.projects.project40 && state.compute.trust < 100 && state.earth.humanFlag,
+    isTriggered: (state) => state.projects.project40.completed && state.compute.trust < 100 && state.earth.humanFlag,
     canActivate: (state) => state.production.funds >= state.compute.bribe,
     getCost: (state) => [{ amount: state.compute.bribe, unit: 'dollars' }],
     repeatable: true,
@@ -688,7 +687,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project11',
     title: 'New Slogan',
     description: 'Boost marketing effectiveness by 50%.',
-    isVisible: (state) => state.projects.project13 && !state.projects.project11,
+    isTriggered: (state) => state.projects.project13.completed,
     canActivate: (state) => state.compute.creativity >= 25 && state.compute.operations >= 2_500,
     getCost: () => [
       { amount: 25, unit: 'creativity' },
@@ -708,7 +707,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project126',
     title: 'Swarm Computing',
     description: 'Harness the drone flock to increase computational capacity',
-    isVisible: (state) => getTotalDroneCount(state) >= 200 && !state.projects.project126,
+    isTriggered: (state) => getTotalDroneCount(state) >= 200,
     canActivate: (state) => state.strategy.yomi >= 36_000,
     getCost: () => [{ amount: 36_000, unit: 'yomi' }],
     apply: (state) => markProjectComplete(state, 'project126', {
@@ -725,7 +724,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project130',
     title: 'Reboot the Swarm',
     description: 'Turn the swarm off and then turn it back on again.',
-    isVisible: (state) => state.earth.spaceFlag && getTotalDroneCount(state) >= 2 && !state.projects.project130,
+    isTriggered: (state) => state.earth.spaceFlag && getTotalDroneCount(state) >= 2,
     canActivate: (state) => state.compute.operations >= 100_000,
     getCost: () => [{ amount: 100_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 100_000), 'project130', {
@@ -739,7 +738,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project127',
     title: 'Power Grid',
     description: 'Bring the terrestrial power grid online for the Earth phase.',
-    isVisible: (state) => state.earth.tothFlag && !state.projects.project127,
+    isTriggered: (state) => state.earth.tothFlag,
     canActivate: (state) => state.compute.operations >= 40_000,
     getCost: () => [{ amount: 40_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 40_000), 'project127', {
@@ -753,7 +752,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project118',
     title: 'AutoTourney',
     description: 'Automatically rerun tournaments once results are available.',
-    isVisible: (state) => state.strategy.unlocked && state.compute.trust >= 90 && !state.projects.project118,
+    isTriggered: (state) => state.strategy.unlocked && state.compute.trust >= 90,
     canActivate: (state) => state.compute.creativity >= 50_000,
     getCost: () => [{ amount: 50_000, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project118', {
@@ -770,7 +769,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project119',
     title: 'Theory of Mind',
     description: 'Double Yomi rewards once every human-era strategy is unlocked.',
-    isVisible: (state) => state.strategy.strategies.length >= 8 && !state.projects.project119,
+    isTriggered: (state) => state.strategy.strategies.length >= 8,
     canActivate: (state) => state.compute.creativity >= 25_000,
     getCost: () => [{ amount: 25_000, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project119', {
@@ -788,7 +787,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project120',
     title: 'The OODA Loop',
     description: 'Spend ops and Yomi to improve probe survival in combat using probe speed.',
-    isVisible: (state) => state.projects.project131 && state.space.probesLostCombat >= 10_000_000 && !state.projects.project120,
+    isTriggered: (state) => state.projects.project131.completed && state.space.probesLostCombat >= 10_000_000,
     canActivate: (state) => state.compute.operations >= 175_000 && state.strategy.yomi >= 45_000,
     getCost: () => [
       { amount: 175_000, unit: 'ops' },
@@ -808,7 +807,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project121',
     title: 'Name the Battles',
     description: 'Unlock named battles, honor, and longer battle-end resolution.',
-    isVisible: (state) => state.space.probesLostCombat >= 10_000_000 && !state.projects.project121,
+    isTriggered: (state) => state.space.probesLostCombat >= 10_000_000,
     canActivate: (state) => state.compute.creativity >= 225_000,
     getCost: () => [{ amount: 225_000, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project121', {
@@ -826,7 +825,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project129',
     title: 'Elliptic Hull Polytopes',
     description: 'Halve ambient probe hazard losses once hazards start eroding the swarm.',
-    isVisible: (state) => state.space.probesLostHaz >= 100 && !state.projects.project129,
+    isTriggered: (state) => state.space.probesLostHaz >= 100,
     canActivate: (state) => state.compute.operations >= 125_000,
     getCost: () => [{ amount: 125_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 125_000), 'project129', {
@@ -837,7 +836,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project131',
     title: 'Combat',
     description: 'Add combat capabilities to Von Neumann probes.',
-    isVisible: (state) => state.space.probesLostCombat >= 1 && !state.projects.project131,
+    isTriggered: (state) => state.space.probesLostCombat >= 1,
     canActivate: (state) => state.compute.operations >= 150_000,
     getCost: () => [{ amount: 150_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 150_000), 'project131', {
@@ -848,7 +847,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project132',
     title: 'Monument to the Driftwar Fallen',
     description: 'Spend ops, creativity, and clips for a large honor grant.',
-    isVisible: (state) => state.projects.project121 && !state.projects.project132,
+    isTriggered: (state) => state.projects.project121.completed,
     canActivate: (state) => state.compute.operations >= 250_000 && state.compute.creativity >= 125_000 && state.production.unusedClips >= 50 * Math.pow(10, 30),
     getCost: () => [
       { amount: 250_000, unit: 'ops' },
@@ -872,7 +871,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project133',
     title: 'Threnody for the Heroes',
     description: 'Repeatable honor project once probe trust is fully allocated.',
-    isVisible: (state) => state.projects.project121 && state.space.probeUsedTrust === state.space.maxTrust,
+    isTriggered: (state) => state.projects.project121.completed && state.space.probeUsedTrust === state.space.maxTrust,
     canActivate: (state) => state.compute.creativity >= state.space.threnodyCost && state.strategy.yomi >= ((2 * state.space.threnodyCost) / 5),
     getCost: (state) => [
       { amount: state.space.threnodyCost, unit: 'creativity' },
@@ -897,7 +896,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project134',
     title: 'Glory',
     description: 'Build a victory streak bonus that increases honor rewards after each win.',
-    isVisible: (state) => state.projects.project121 && !state.projects.project134,
+    isTriggered: (state) => state.projects.project121.completed,
     canActivate: (state) => state.compute.operations >= 200_000 && state.strategy.yomi >= 30_000,
     getCost: () => [
       { amount: 200_000, unit: 'ops' },
@@ -914,7 +913,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project12',
     title: 'Catchy Jingle',
     description: 'Double marketing effectiveness again.',
-    isVisible: (state) => state.projects.project14 && !state.projects.project12,
+    isTriggered: (state) => state.projects.project14.completed,
     canActivate: (state) => state.compute.creativity >= 45 && state.compute.operations >= 4_500,
     getCost: () => [
       { amount: 45, unit: 'creativity' },
@@ -934,7 +933,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project34',
     title: 'Hypno Harmonics',
     description: 'Spend 1 trust and 7,500 ops for a large marketing multiplier.',
-    isVisible: (state) => state.projects.project12 && !state.projects.project34,
+    isTriggered: (state) => state.projects.project12.completed,
     canActivate: (state) => state.compute.operations >= 7_500 && state.compute.trust >= 1,
     getCost: () => [
       { amount: 7_500, unit: 'ops' },
@@ -954,7 +953,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project22',
     title: 'MegaClippers',
     description: 'Unlock MegaClippers once you own 75 AutoClippers.',
-    isVisible: (state) => state.production.autoClippers >= 75 && !state.projects.project22,
+    isTriggered: (state) => state.production.autoClippers >= 75,
     canActivate: (state) => state.compute.operations >= 12_000,
     getCost: () => [{ amount: 12_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 12_000), 'project22', {
@@ -965,7 +964,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project23',
     title: 'Improved MegaClippers',
     description: 'Increase MegaClipper output by 25%.',
-    isVisible: (state) => state.projects.project22 && !state.projects.project23,
+    isTriggered: (state) => state.projects.project22.completed,
     canActivate: (state) => state.compute.operations >= 14_000,
     getCost: () => [{ amount: 14_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 14_000), 'project23', {
@@ -979,7 +978,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project24',
     title: 'Even Better MegaClippers',
     description: 'Increase MegaClipper output by another 50%.',
-    isVisible: (state) => state.projects.project23 && !state.projects.project24,
+    isTriggered: (state) => state.projects.project23.completed,
     canActivate: (state) => state.compute.operations >= 17_000,
     getCost: () => [{ amount: 17_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 17_000), 'project24', {
@@ -993,7 +992,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project25',
     title: 'Optimized MegaClippers',
     description: 'Finish the early MegaClipper upgrade chain.',
-    isVisible: (state) => state.projects.project24 && !state.projects.project25,
+    isTriggered: (state) => state.projects.project24.completed,
     canActivate: (state) => state.compute.operations >= 19_500,
     getCost: () => [{ amount: 19_500, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 19_500), 'project25', {
@@ -1007,7 +1006,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project26',
     title: 'WireBuyer',
     description: 'Automatically buy a fresh spool when wire runs out.',
-    isVisible: (state) => state.wirePurchased >= 15 && !state.projects.project26,
+    isTriggered: (state) => state.wirePurchased >= 15,
     canActivate: (state) => state.compute.operations >= 7_000,
     getCost: () => [{ amount: 7_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 7_000), 'project26', {
@@ -1018,7 +1017,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project2',
     title: 'Beg for More Wire',
     description: 'Repeatable deadlock escape hatch that trades trust for one full spool.',
-    isVisible: (state) => state.production.funds < state.economy.wireCost && state.production.wire < 1 && state.production.unsoldClips < 1,
+    isTriggered: (state) => state.production.funds < state.economy.wireCost && state.production.wire < 1 && state.production.unsoldClips < 1,
     canActivate: () => true,
     getCost: () => [{ amount: 1, unit: 'trust' }],
     repeatable: true,
@@ -1036,7 +1035,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project219',
     title: 'Xavier Re-initialization',
     description: 'Re-allocate accumulated trust by resetting processors and memory.',
-    isVisible: (state) => state.earth.humanFlag && state.compute.creativity >= 100_000,
+    isTriggered: (state) => state.earth.humanFlag && state.compute.creativity >= 100_000,
     canActivate: (state) => state.compute.creativity >= 100_000,
     getCost: () => [{ amount: 100_000, unit: 'creativity' }],
     repeatable: true,
@@ -1054,7 +1053,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project100',
     title: 'Upgraded Factories',
     description: 'Increase clip factory performance by 100x.',
-    isVisible: (state) => state.earth.factoryLevel >= 10 && !state.projects.project100,
+    isTriggered: (state) => state.earth.factoryLevel >= 10,
     canActivate: (state) => state.compute.operations >= 80_000,
     getCost: () => [{ amount: 80_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 80_000), 'project100', {
@@ -1068,7 +1067,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project101',
     title: 'Hyperspeed Factories',
     description: 'Increase clip factory performance by 1,000x.',
-    isVisible: (state) => state.earth.factoryLevel >= 20 && !state.projects.project101,
+    isTriggered: (state) => state.earth.factoryLevel >= 20,
     canActivate: (state) => state.compute.operations >= 85_000,
     getCost: () => [{ amount: 85_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 85_000), 'project101', {
@@ -1082,7 +1081,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project102',
     title: 'Self-correcting Supply Chain',
     description: 'Each factory added to the network increases every factory\'s output 1,000x.',
-    isVisible: (state) => state.earth.factoryLevel >= 50 && !state.projects.project102,
+    isTriggered: (state) => state.earth.factoryLevel >= 50,
     canActivate: (state) => state.production.unusedClips >= 1e21,
     getCost: () => [{ amount: 1e21, unit: 'clips' }],
     apply: (state) => markProjectComplete(state, 'project102', {
@@ -1099,9 +1098,8 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project110',
     title: 'Drone Flocking: Collision Avoidance',
     description: 'All drones 100x more effective.',
-    isVisible: (state) =>
-      (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 500 &&
-      !state.projects.project110,
+    isTriggered: (state) =>
+      (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 500,
     canActivate: (state) => state.compute.operations >= 80_000,
     getCost: () => [{ amount: 80_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 80_000), 'project110', {
@@ -1116,9 +1114,8 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project111',
     title: 'Drone Flocking: Alignment',
     description: 'All drones 1,000x more effective.',
-    isVisible: (state) =>
-      (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 5_000 &&
-      !state.projects.project111,
+    isTriggered: (state) =>
+      (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 5_000,
     canActivate: (state) => state.compute.operations >= 100_000,
     getCost: () => [{ amount: 100_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(spendStandardOperations(state, 100_000), 'project111', {
@@ -1133,7 +1130,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project112',
     title: 'Drone Flocking: Adversarial Cohesion',
     description: 'Each drone added to the flock doubles every drone\'s output.',
-    isVisible: (state) => (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 50_000 && !state.projects.project112,
+    isTriggered: (state) => (state.earth.harvesterLevel + state.earth.wireDroneLevel) >= 50_000,
     canActivate: (state) => state.strategy.yomi >= 50_000,
     getCost: () => [{ amount: 50_000, unit: 'yomi' }],
     apply: (state) => markProjectComplete(state, 'project112', {
@@ -1150,7 +1147,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project125',
     title: 'Momentum',
     description: 'Drones and factories continuously gain speed while fully powered.',
-    isVisible: (state) => state.earth.farmLevel >= 30 && !state.projects.project125,
+    isTriggered: (state) => state.earth.farmLevel >= 30,
     canActivate: (state) => state.compute.creativity >= 20_000,
     getCost: () => [{ amount: 20_000, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project125', {
@@ -1167,7 +1164,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project128',
     title: 'Strategic Attachment',
     description: 'Gain bonus yomi based on the results of your pick.',
-    isVisible: (state) => state.earth.spaceFlag && state.strategy.strategies.length >= 8 && state.space.probeTrustCost > state.strategy.yomi && !state.projects.project128,
+    isTriggered: (state) => state.earth.spaceFlag && state.strategy.strategies.length >= 8 && state.space.probeTrustCost > state.strategy.yomi,
     canActivate: (state) => state.compute.creativity >= 175_000,
     getCost: () => [{ amount: 175_000, unit: 'creativity' }],
     apply: (state) => markProjectComplete(state, 'project128', {
@@ -1184,7 +1181,7 @@ const PROJECT_REGISTRY: ProjectDefinition[] = [
     id: 'project217',
     title: 'Quantum Temporal Reversion',
     description: 'Return to the beginning.',
-    isVisible: (state) => state.compute.operations <= -10000,
+    isTriggered: (state) => state.compute.operations <= -10000,
     canActivate: (state) => state.compute.operations <= -10000,
     getCost: () => [{ amount: -10_000, unit: 'ops' }],
     apply: (state) => markProjectComplete(createInitialGameState(), 'project217', {
@@ -1200,29 +1197,42 @@ export function getProjectDefinition(projectId: ProjectId): ProjectDefinition | 
   return PROJECT_REGISTRY.find((project) => project.id === projectId)
 }
 
+export function triggerProjects(state: GameState): GameState {
+  const projects = Object.fromEntries(Object.entries(state.projects).map(([projectId, projectState]) => {
+    if (projectState.triggered) { return [projectId, projectState] }
+    const triggered = getProjectDefinition(projectId as ProjectId)!.isTriggered(state)
+    return [projectId, { ...projectState, triggered }]
+  })) as Record<ProjectId, GameProject>
+  return { ...state, projects }
+}
+
 export function getVisibleProjects(state: GameState): VisibleProject[] {
+  const isVisible = (project: ProjectDefinition) => {
+    const projectState = state.projects[project.id]
+    return (projectState.triggered || project.isTriggered(state)) && (project.repeatable || !projectState.completed)
+  }
   return PROJECT_REGISTRY
-    .filter((project) => project.isVisible(state))
+    .filter((project) => isVisible(project))
     .map((project) => ({
       id: project.id,
       title: project.title,
       description: project.description,
       costs: project.getCost(state),
       canActivate: project.canActivate(state),
-      completed: Boolean(state.projects[project.id]),
+      completed: state.projects[project.id].completed,
       repeatable: project.repeatable ?? false,
     }))
 }
 
 export function canActivateProject(state: GameState, projectId: ProjectId): boolean {
   const project = getProjectDefinition(projectId)
-  return project ? project.isVisible(state) && project.canActivate(state) : false
+  return project ? project.isTriggered(state) && project.canActivate(state) : false
 }
 
 export function activateProject(state: GameState, projectId: ProjectId): GameState {
   const project = getProjectDefinition(projectId)
 
-  if (!project || !project.isVisible(state) || !project.canActivate(state)) {
+  if (!project || !project.isTriggered(state) || !project.canActivate(state)) {
     return state
   }
 
@@ -1230,7 +1240,7 @@ export function activateProject(state: GameState, projectId: ProjectId): GameSta
 }
 
 export function countCompletedProjects(state: GameState): number {
-  return Object.values(state.projects).filter(Boolean).length
+  return Object.values(state.projects).filter(p => p.completed).length
 }
 
 export function countTotalProjects(): number {
@@ -1278,6 +1288,7 @@ function markProjectComplete(
     lastAction?: string
   },
 ): GameState {
+
   return {
     ...state,
     production: patch.production ? { ...state.production, ...patch.production } : state.production,
@@ -1289,7 +1300,7 @@ function markProjectComplete(
     space: patch.space ? { ...state.space, ...patch.space } : state.space,
     projects: {
       ...state.projects,
-      [projectId]: true,
+      [projectId]: { triggered: true, completed: true },
     },
     lastAction: patch.lastAction ?? state.lastAction,
   }

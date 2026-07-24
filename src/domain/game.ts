@@ -49,7 +49,7 @@ import {
   type ProbeTrustTarget,
 } from './space/space'
 import { createInitialWireMarket } from './economy/wireMarket'
-import { activateProject, canActivateProject, countCompletedProjects, countTotalProjects, getVisibleProjects } from './projects/projectRegistry'
+import { activateProject, canActivateProject, countCompletedProjects, countTotalProjects, getVisibleProjects, triggerProjects } from './projects/projectRegistry'
 import {
   canCreateTournament,
   canRunTournament,
@@ -284,8 +284,13 @@ export interface SpaceBattle {
   battleEndTimer: number
 }
 
+export interface GameProject {
+  triggered: boolean
+  completed: boolean
+}
+
 export interface GameState {
-  version: 10
+  version: 11
   elapsedMs: number
   paused: boolean
   production: GameProduction
@@ -301,11 +306,15 @@ export interface GameState {
   lastTickSales: number
   lastTickRevenue: number
   lastAction: string
-  projects: Record<ProjectId, boolean>
+  projects: Record<ProjectId, GameProject>
   phase: GamePhase
 }
 
-export const GAME_VERSION = 10
+// Bumped to 11 when `projects` changed from Record<ProjectId, boolean> to
+// Record<ProjectId, GameProject>. The bump matters in both directions: it stops
+// a v10 save being misread as the new shape, and stops a v11 save being read by
+// older code, where every project object would evaluate truthy and read as complete.
+export const GAME_VERSION = 11
 export const WIRE_UNIT_LABEL = 'inches'
 export const WIRE_BATCH_UNIT = 1_000
 export const WIRE_PER_CLIP = 1
@@ -610,6 +619,10 @@ export function createInitialGameState(): GameState {
 }
 
 export function reduceGameState(state: GameState, action: GameAction): GameState {
+  const next = executeAction(state, action)
+  return triggerProjects(next)
+}
+export function executeAction(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'tick':
       return tick(state, action.deltaMs)
@@ -755,7 +768,7 @@ function buyMegaClipper(state: GameState): GameState {
 
   const synced = syncEarlyEconomyState(state)
 
-  if (!synced.projects.project22 || synced.production.funds < synced.production.megaClipperCost) {
+  if (!synced.projects.project22.completed || synced.production.funds < synced.production.megaClipperCost) {
     return state
   }
 
@@ -833,7 +846,7 @@ export function getStallState(state: GameState): { stalled: boolean; reason: str
   const canBuyWire = synced.earth.humanFlag && synced.production.funds >= getWireBatchCost(synced, 1)
   const canBuyAutoClipper = synced.earth.humanFlag && synced.production.funds >= synced.production.autoClipperCost
   const canBuyMarketing = synced.earth.humanFlag && synced.production.funds >= synced.economy.adCost
-  const canBuyMegaClipper = synced.earth.humanFlag && synced.projects.project22 && synced.production.funds >= synced.production.megaClipperCost
+  const canBuyMegaClipper = synced.earth.humanFlag && synced.projects.project22.completed && synced.production.funds >= synced.production.megaClipperCost
   const canInvest = synced.earth.humanFlag && synced.investment.unlocked && synced.production.funds > 0
   const canWithdrawInvestment = synced.earth.humanFlag && synced.investment.unlocked && synced.investment.bankroll > 0
   const canUpgradeInvestment = synced.earth.humanFlag && synced.investment.unlocked && synced.strategy.yomi >= synced.investment.investUpgradeCost
@@ -920,83 +933,83 @@ export function getSelectedStrategyLabel(state: GameState): string {
   return formatStrategyLabel(state.strategy.selectedStrategy)
 }
 
-export function createInitialProjectFlags(): Record<ProjectId, boolean> {
+export function createInitialProjectFlags(): Record<ProjectId, GameProject> {
   return {
-    project1: false,
-    project2: false,
-    project3: false,
-    project16: false,
-    project18: false,
-    project20: false,
-    project21: false,
-    project27: false,
-    project28: false,
-    project29: false,
-    project30: false,
-    project31: false,
-    project37: false,
-    project38: false,
-    project4: false,
-    project5: false,
-    project50: false,
-    project51: false,
-    project6: false,
-    project60: false,
-    project61: false,
-    project62: false,
-    project63: false,
-    project64: false,
-    project65: false,
-    project66: false,
-    project7: false,
-    project8: false,
-    project9: false,
-    project10: false,
-    project10b: false,
-    project11: false,
-    project12: false,
-    project13: false,
-    project14: false,
-    project15: false,
-    project17: false,
-    project19: false,
-    project35: false,
-    project40: false,
-    project40b: false,
-    project41: false,
-    project43: false,
-    project44: false,
-    project45: false,
-    project46: false,
-    project22: false,
-    project23: false,
-    project24: false,
-    project25: false,
-    project26: false,
-    project70: false,
-    project100: false,
-    project101: false,
-    project102: false,
-    project110: false,
-    project111: false,
-    project112: false,
-    project125: false,
-    project128: false,
-    project118: false,
-    project119: false,
-    project120: false,
-    project121: false,
-    project126: false,
-    project130: false,
-    project129: false,
-    project132: false,
-    project133: false,
-    project134: false,
-    project131: false,
-    project127: false,
-    project217: false,
-    project219: false,
-    project34: false,
+    project1: { triggered: false, completed: false },
+    project2: { triggered: false, completed: false },
+    project3: { triggered: false, completed: false },
+    project16: { triggered: false, completed: false },
+    project18: { triggered: false, completed: false },
+    project20: { triggered: false, completed: false },
+    project21: { triggered: false, completed: false },
+    project27: { triggered: false, completed: false },
+    project28: { triggered: false, completed: false },
+    project29: { triggered: false, completed: false },
+    project30: { triggered: false, completed: false },
+    project31: { triggered: false, completed: false },
+    project37: { triggered: false, completed: false },
+    project38: { triggered: false, completed: false },
+    project4: { triggered: false, completed: false },
+    project5: { triggered: false, completed: false },
+    project50: { triggered: false, completed: false },
+    project51: { triggered: false, completed: false },
+    project6: { triggered: false, completed: false },
+    project60: { triggered: false, completed: false },
+    project61: { triggered: false, completed: false },
+    project62: { triggered: false, completed: false },
+    project63: { triggered: false, completed: false },
+    project64: { triggered: false, completed: false },
+    project65: { triggered: false, completed: false },
+    project66: { triggered: false, completed: false },
+    project7: { triggered: false, completed: false },
+    project8: { triggered: false, completed: false },
+    project9: { triggered: false, completed: false },
+    project10: { triggered: false, completed: false },
+    project10b: { triggered: false, completed: false },
+    project11: { triggered: false, completed: false },
+    project12: { triggered: false, completed: false },
+    project13: { triggered: false, completed: false },
+    project14: { triggered: false, completed: false },
+    project15: { triggered: false, completed: false },
+    project17: { triggered: false, completed: false },
+    project19: { triggered: false, completed: false },
+    project35: { triggered: false, completed: false },
+    project40: { triggered: false, completed: false },
+    project40b: { triggered: false, completed: false },
+    project41: { triggered: false, completed: false },
+    project43: { triggered: false, completed: false },
+    project44: { triggered: false, completed: false },
+    project45: { triggered: false, completed: false },
+    project46: { triggered: false, completed: false },
+    project22: { triggered: false, completed: false },
+    project23: { triggered: false, completed: false },
+    project24: { triggered: false, completed: false },
+    project25: { triggered: false, completed: false },
+    project26: { triggered: false, completed: false },
+    project70: { triggered: false, completed: false },
+    project100: { triggered: false, completed: false },
+    project101: { triggered: false, completed: false },
+    project102: { triggered: false, completed: false },
+    project110: { triggered: false, completed: false },
+    project111: { triggered: false, completed: false },
+    project112: { triggered: false, completed: false },
+    project125: { triggered: false, completed: false },
+    project128: { triggered: false, completed: false },
+    project118: { triggered: false, completed: false },
+    project119: { triggered: false, completed: false },
+    project120: { triggered: false, completed: false },
+    project121: { triggered: false, completed: false },
+    project126: { triggered: false, completed: false },
+    project130: { triggered: false, completed: false },
+    project129: { triggered: false, completed: false },
+    project132: { triggered: false, completed: false },
+    project133: { triggered: false, completed: false },
+    project134: { triggered: false, completed: false },
+    project131: { triggered: false, completed: false },
+    project127: { triggered: false, completed: false },
+    project217: { triggered: false, completed: false },
+    project219: { triggered: false, completed: false },
+    project34: { triggered: false, completed: false },
   }
 }
 

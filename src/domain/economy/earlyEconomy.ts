@@ -33,7 +33,7 @@ export function syncEarlyEconomyState(state: GameState): GameState {
 export function runEarlyEconomyTick(state: GameState, deltaMs: number, random: () => number): GameState {
   let synced = syncEarlyEconomyState(state)
 
-  if (synced.earth.humanFlag && synced.projects.project26 && synced.production.wire < 1 && synced.production.funds >= synced.economy.wireCost) {
+  if (synced.earth.humanFlag && synced.projects.project26.completed && synced.production.wire < 1 && synced.production.funds >= synced.economy.wireCost) {
     synced = syncEarlyEconomyState(applyWirePurchaseToEconomy(synced, 1))
   }
 

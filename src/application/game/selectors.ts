@@ -28,8 +28,8 @@ function getUiVisibility(state: GameState) {
   return {
     showCompute: state.compute.unlocked || state.compute.operations > 0 || state.compute.trust > 2,
     showInvestment: state.investment.unlocked,
-    showStrategy: state.strategy.unlocked || state.projects.project118,
-    showPostHuman: !state.earth.humanFlag || state.projects.project35 || state.earth.tothFlag,
+    showStrategy: state.strategy.unlocked || state.projects.project118.completed,
+    showPostHuman: !state.earth.humanFlag || state.projects.project35.completed || state.earth.tothFlag,
     showSpace: state.earth.spaceFlag,
   }
 }
@@ -84,7 +84,7 @@ function buildSpaceRows(state: GameState): InfoRowViewModel[] {
     { label: 'Hazard / Drift', value: `${formatNumber(spaceStatus.hazardLossRate, 4)} / ${formatNumber(spaceStatus.driftLossRate, 4)}` },
     { label: 'Losses / Drifters', value: `${formatNumber(state.space.probesLostHaz, 4)} / ${formatNumber(state.space.drifterCount, 4)}` },
     { label: 'Combat / Losses', value: `${spaceStatus.battleActive ? 'Active' : 'Idle'} / ${formatNumber(state.space.probesLostCombat, 4)}` },
-    ...(state.projects.project121 ? [{ label: 'Honor / Bonus', value: `${formatNumber(state.space.honor, 2)} / ${formatNumber(state.space.bonusHonor, 2)}` }] : []),
+    ...(state.projects.project121.completed ? [{ label: 'Honor / Bonus', value: `${formatNumber(state.space.honor, 2)} / ${formatNumber(state.space.bonusHonor, 2)}` }] : []),
     { label: 'Found matter', value: formatNumber(state.space.foundMatter) },
   ]
 }
@@ -202,7 +202,7 @@ export function selectStatusSidebarViewModel(state: GameState, tickMs: number, c
           { label: 'Hazard / Drift', value: `${formatNumber(spaceStatus.hazardLossRate, 4)} / ${formatNumber(spaceStatus.driftLossRate, 4)}` },
           { label: 'Probe losses', value: `${formatNumber(state.space.probesLostHaz, 4)} / ${formatNumber(state.space.probesLostDrift, 4)}` },
           { label: 'Combat', value: `${spaceStatus.battleActive ? 'Active' : 'Idle'} / ${formatNumber(state.space.probesLostCombat, 4)}` },
-          ...(state.projects.project121 ? [{ label: 'Honor / Bonus', value: `${formatNumber(state.space.honor, 2)} / ${formatNumber(state.space.bonusHonor, 2)}` }] : []),
+          ...(state.projects.project121.completed ? [{ label: 'Honor / Bonus', value: `${formatNumber(state.space.honor, 2)} / ${formatNumber(state.space.bonusHonor, 2)}` }] : []),
           { label: 'Found matter', value: formatNumber(state.space.foundMatter) },
         ]
       : []),
@@ -241,7 +241,7 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string, 
     ...(state.compute.swarmGifts > 0 ? [`Swarm Gifts ${formatNumber(state.compute.swarmGifts)}`] : []),
   ].join(' | ')
   const droneCount = getTotalDroneCount(state)
-  const showQuantumCompute = state.projects.project50
+  const showQuantumCompute = state.projects.project50.completed
   const quantumNote = showQuantumCompute ? [
     ...(showQOps
       ? state.compute.qChips.some(c => c.active) ? [`qOps: ${formatNumber(state.compute.qOps)}`] : ['Need photonic chips']
@@ -263,7 +263,7 @@ export function selectIndustryScreenViewModel(state: GameState, demand: string, 
     synchronizeCostNote: `Yomi ${formatNumber(state.strategy.yomi)} | Cost ${formatNumber(state.compute.synchCost)} yomi`,
     timeUntilSwarmGift: timeUntilSwarmGift(state),
     quantumNote,
-    automationNote: `AutoClipper cost ${formatCurrency(state.production.autoClipperCost)}. MegaClipper ${state.projects.project22 ? formatCurrency(state.production.megaClipperCost) : 'locked'}.`,
+    automationNote: `AutoClipper cost ${formatCurrency(state.production.autoClipperCost)}. MegaClipper ${state.projects.project22.completed ? formatCurrency(state.production.megaClipperCost) : 'locked'}.`,
     marketingNote: `Current level ${formatNumber(state.production.marketingLevel)}. Next ad cost ${formatCurrency(state.economy.adCost)}.`,
     transitionRows: [
       { label: 'Civilization', value: getEarthModeLabel(state) },
@@ -370,12 +370,12 @@ export function selectCombatScreenViewModel(state: GameState) {
   const availableProbeTrust = Math.max(0, state.space.probeTrust - state.space.probeUsedTrust)
 
   return {
-    combatUnlocked: state.projects.project131,
-    honorUnlocked: state.projects.project121,
+    combatUnlocked: state.projects.project131.completed,
+    honorUnlocked: state.projects.project121.completed,
     availableProbeTrust,
     statusRows: [
-      { label: 'Combat project', value: state.projects.project131 ? 'Unlocked' : 'Locked' },
-      { label: 'Honor layer', value: state.projects.project121 ? 'Unlocked' : 'Locked' },
+      { label: 'Combat project', value: state.projects.project131.completed ? 'Unlocked' : 'Locked' },
+      { label: 'Honor layer', value: state.projects.project121.completed ? 'Unlocked' : 'Locked' },
       { label: 'Battle status', value: activeBattle ? 'Active engagement' : 'No engagement' },
       { label: 'Probe combat trust', value: formatNumber(state.space.probeCombat) },
       { label: 'Unassigned trust', value: formatNumber(availableProbeTrust) },
@@ -395,11 +395,11 @@ export function selectCombatScreenViewModel(state: GameState) {
       { label: 'Battle clock', value: activeBattle ? `${formatNumber(activeBattle.battleClock)} / ${formatNumber(activeBattle.masterBattleClock)}` : '0 / 0' },
       { label: 'End delay', value: activeBattle ? `${activeBattle.battleEndDelay ? 'Active' : 'Idle'} / ${formatNumber(activeBattle.battleEndTimer)}` : 'Idle / 0' },
       { label: 'Territory', value: activeBattle ? formatNumber(activeBattle.territory, 4) : '0' },
-      { label: 'OODA / Naming', value: `${state.projects.project120 ? 'On' : 'Off'} / ${state.space.battleNameFlag ? 'On' : 'Off'}` },
+      { label: 'OODA / Naming', value: `${state.projects.project120.completed ? 'On' : 'Off'} / ${state.space.battleNameFlag ? 'On' : 'Off'}` },
       { label: 'Honor reward / Bonus', value: `${formatNumber(state.space.honorReward, 2)} / ${formatNumber(state.space.bonusHonor, 2)}` },
       { label: 'Threnody', value: `${state.space.threnodyTitle} / ${formatNumber(state.space.threnodyCost)} creat` },
     ],
-    note: state.projects.project131
+    note: state.projects.project131.completed
       ? 'Current parity slice: battles can begin before Combat unlocks, drifters only die after Combat trust is allocated, OODA raises probe survival via speed, and honor starts once Name the Battles is complete.'
       : 'Unlock Combat first to allocate probe trust into battle capability.',
   }
