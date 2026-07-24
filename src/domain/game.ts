@@ -51,7 +51,9 @@ import {
 import { createInitialWireMarket } from './economy/wireMarket'
 import { activateProject, canActivateProject, countCompletedProjects, countTotalProjects, getVisibleProjects, triggerProjects } from './projects/projectRegistry'
 import {
+  canCreateTournament,
   canRunTournament,
+  createNewTournament,
   cycleStrategySelection,
   formatStrategyLabel,
   runStrategyTick,
@@ -168,6 +170,9 @@ export interface GameStrategy {
   yomiBoost: number
   tourneyCost: number
   tourneyLevel: number
+  tourneyInProgress: boolean
+  tourneyStarted: boolean
+  tourneyElapsedMs: number
   autoTourneyEnabled: boolean
   resultsTimer: number
   lastResults: TournamentResult[]
@@ -219,6 +224,8 @@ export interface GameEarth {
   factoryRate: number
   harvesterRate: number
   wireDroneRate: number
+  factoryBoost: number
+  droneBoost: number
   momentum: number
 }
 
@@ -359,10 +366,10 @@ export type GameAction =
   | { type: 'makeClip' }
   | { type: 'buyWire'; amount: number }
   | { type: 'buyFactory' }
-  | { type: 'buyHarvester' }
-  | { type: 'buyWireDrone' }
-  | { type: 'buyFarm' }
-  | { type: 'buyBattery' }
+  | { type: 'buyHarvester', quantity?: 1 | 10 | 100 | 1_000 }
+  | { type: 'buyWireDrone', quantity?: 1 | 10 | 100 | 1_000 }
+  | { type: 'buyFarm', quantity?: 1 | 10 | 100 }
+  | { type: 'buyBattery', quantity?: 1 | 10 | 100 }
   | { type: 'setSwarmComputingBalance'; workThinkBalance: number }
   | { type: 'entertainSwarm' }
   | { type: 'synchronizeSwarm' }
@@ -383,6 +390,7 @@ export type GameAction =
   | { type: 'investWithdraw' }
   | { type: 'investUpgrade' }
   | { type: 'cycleInvestmentRisk' }
+  | { type: 'createNewTournament' }
   | { type: 'runTournament' }
   | { type: 'cycleStrategySelection' }
   | { type: 'toggleAutoTourney' }
@@ -502,6 +510,9 @@ export function createInitialGameState(): GameState {
       yomiBoost: 1,
       tourneyCost: 1_000,
       tourneyLevel: 1,
+      tourneyInProgress: false,
+      tourneyStarted: false,
+      tourneyElapsedMs: 0,
       autoTourneyEnabled: false,
       resultsTimer: 0,
       lastResults: [],
@@ -552,6 +563,8 @@ export function createInitialGameState(): GameState {
       factoryRate: INITIAL_FACTORY_RATE,
       harvesterRate: INITIAL_HARVESTER_RATE,
       wireDroneRate: INITIAL_WIRE_DRONE_RATE,
+      factoryBoost: 1,
+      droneBoost: 1,
       momentum: 0,
     },
     space: {
@@ -616,13 +629,13 @@ export function executeAction(state: GameState, action: GameAction): GameState {
     case 'buyFactory':
       return buyFactory(state)
     case 'buyHarvester':
-      return buyHarvester(state)
+      return buyHarvester(state, action.quantity)
     case 'buyWireDrone':
-      return buyWireDrone(state)
+      return buyWireDrone(state, action.quantity)
     case 'buyFarm':
-      return buyFarm(state)
+      return buyFarm(state, action.quantity)
     case 'buyBattery':
-      return buyBattery(state)
+      return buyBattery(state, action.quantity)
     case 'setSwarmComputingBalance':
       return setSwarmComputingBalance(state, action.workThinkBalance)
     case 'entertainSwarm':
@@ -663,8 +676,10 @@ export function executeAction(state: GameState, action: GameAction): GameState {
       return investUpgrade(state)
     case 'cycleInvestmentRisk':
       return cycleInvestmentRiskMode(state)
+    case 'createNewTournament':
+      return createNewTournament(state, Math.random)
     case 'runTournament':
-      return runTournament(state, Math.random)
+      return runTournament(state)
     case 'cycleStrategySelection':
       return cycleStrategySelection(state)
     case 'toggleAutoTourney':
@@ -831,8 +846,9 @@ export function getStallState(state: GameState): { stalled: boolean; reason: str
   const canInvest = synced.earth.humanFlag && synced.investment.unlocked && synced.production.funds > 0
   const canWithdrawInvestment = synced.earth.humanFlag && synced.investment.unlocked && synced.investment.bankroll > 0
   const canUpgradeInvestment = synced.earth.humanFlag && synced.investment.unlocked && synced.strategy.yomi >= synced.investment.investUpgradeCost
-  const canRunManualTournament = canRunTournament(synced)
+  const canRunManualTournament = canCreateTournament(synced) || canRunTournament(synced)
   const canManualProduce = synced.earth.humanFlag && synced.production.wire >= WIRE_PER_CLIP
+  const canUnlockPostHumanResources = !synced.earth.humanFlag && !synced.projects.project18 && synced.compute.memory >= 45
   const canBuyFactory = !synced.earth.humanFlag && synced.earth.factoryFlag && synced.production.unusedClips >= synced.earth.factoryCost
   const canBuyHarvester = !synced.earth.humanFlag && synced.earth.harvesterFlag && synced.production.unusedClips >= synced.earth.harvesterCost
   const canBuyWireDrone = !synced.earth.humanFlag && synced.earth.wireDroneFlag && synced.production.unusedClips >= synced.earth.wireDroneCost
@@ -853,6 +869,7 @@ export function getStallState(state: GameState): { stalled: boolean; reason: str
     && !canWithdrawInvestment
     && !canUpgradeInvestment
     && !canRunManualTournament
+    && !canUnlockPostHumanResources
     && !canBuyFactory
     && !canBuyHarvester
     && !canBuyWireDrone
@@ -968,8 +985,10 @@ export function createInitialProjectFlags(): Record<ProjectId, GameProject> {
     project70: { triggered: false, completed: false },
     project100: { triggered: false, completed: false },
     project101: { triggered: false, completed: false },
+    project102: { triggered: false, completed: false },
     project110: { triggered: false, completed: false },
     project111: { triggered: false, completed: false },
+    project112: { triggered: false, completed: false },
     project125: { triggered: false, completed: false },
     project128: { triggered: false, completed: false },
     project118: { triggered: false, completed: false },
