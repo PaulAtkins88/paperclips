@@ -354,10 +354,10 @@ export type GameAction =
   | { type: 'makeClip' }
   | { type: 'buyWire'; amount: number }
   | { type: 'buyFactory' }
-  | { type: 'buyHarvester' }
-  | { type: 'buyWireDrone' }
-  | { type: 'buyFarm' }
-  | { type: 'buyBattery' }
+  | { type: 'buyHarvester', quantity?: 1 | 10 | 100 | 1_000 }
+  | { type: 'buyWireDrone', quantity?: 1 | 10 | 100 | 1_000 }
+  | { type: 'buyFarm', quantity?: 1 | 10 | 100 }
+  | { type: 'buyBattery', quantity?: 1 | 10 | 100 }
   | { type: 'setSwarmComputingBalance'; workThinkBalance: number }
   | { type: 'entertainSwarm' }
   | { type: 'synchronizeSwarm' }
@@ -607,13 +607,13 @@ export function reduceGameState(state: GameState, action: GameAction): GameState
     case 'buyFactory':
       return buyFactory(state)
     case 'buyHarvester':
-      return buyHarvester(state)
+      return buyHarvester(state, action.quantity)
     case 'buyWireDrone':
-      return buyWireDrone(state)
+      return buyWireDrone(state, action.quantity)
     case 'buyFarm':
-      return buyFarm(state)
+      return buyFarm(state, action.quantity)
     case 'buyBattery':
-      return buyBattery(state)
+      return buyBattery(state, action.quantity)
     case 'setSwarmComputingBalance':
       return setSwarmComputingBalance(state, action.workThinkBalance)
     case 'entertainSwarm':

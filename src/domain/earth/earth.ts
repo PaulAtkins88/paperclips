@@ -97,26 +97,27 @@ export function rebootFactories(state: GameState): GameState {
   }
 }
 
-export function buyFarm(state: GameState): GameState {
-  if (state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < state.earth.farmCost) {
+export function buyFarm(state: GameState, quantity = 1): GameState {
+  const farmCost = getFarmCost(state.earth.farmLevel, quantity)
+  if (state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < farmCost) {
     return state
   }
 
-  const nextLevel = state.earth.farmLevel + 1
+  const nextLevel = state.earth.farmLevel + quantity
 
   return syncEarthPower({
     ...state,
     production: {
       ...state.production,
-      unusedClips: state.production.unusedClips - state.earth.farmCost,
+      unusedClips: state.production.unusedClips - farmCost,
     },
     earth: {
       ...state.earth,
       farmLevel: nextLevel,
-      farmCost: Math.pow(nextLevel + 1, 2.78) * 10_000_000,
-      farmBill: state.earth.farmBill + state.earth.farmCost,
+      farmCost: getFarmCost(nextLevel, 1),
+      farmBill: state.earth.farmBill + farmCost,
     },
-    lastAction: 'Built a solar farm',
+    lastAction: (quantity === 1) ? 'Built a solar farm' : `Built ${quantity} solar farms`,
   })
 }
 
@@ -140,26 +141,27 @@ export function rebootFarms(state: GameState): GameState {
   }
 }
 
-export function buyBattery(state: GameState): GameState {
-  if (state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < state.earth.batteryCost) {
+export function buyBattery(state: GameState, quantity = 1): GameState {
+  const batteryCost = getBatteryCost(state.earth.batteryLevel, quantity)
+  if (state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < batteryCost) {
     return state
   }
 
-  const nextLevel = state.earth.batteryLevel + 1
+  const nextLevel = state.earth.batteryLevel + quantity
 
   return syncEarthPower({
     ...state,
     production: {
       ...state.production,
-      unusedClips: state.production.unusedClips - state.earth.batteryCost,
+      unusedClips: state.production.unusedClips - batteryCost,
     },
     earth: {
       ...state.earth,
       batteryLevel: nextLevel,
-      batteryCost: Math.pow(nextLevel + 1, 2.54) * 1_000_000,
-      batteryBill: state.earth.batteryBill + state.earth.batteryCost,
+      batteryCost: getBatteryCost(nextLevel, 1),
+      batteryBill: state.earth.batteryBill + batteryCost,
     },
-    lastAction: 'Built a battery tower',
+    lastAction: (quantity === 1) ? 'Built a battery tower' : `Built ${quantity} battery towers`,
   })
 }
 
@@ -184,27 +186,28 @@ export function rebootBatteries(state: GameState): GameState {
   }
 }
 
-export function buyHarvester(state: GameState): GameState {
-  if (state.earth.humanFlag || !state.earth.harvesterFlag || state.production.unusedClips < state.earth.harvesterCost) {
+export function buyHarvester(state: GameState, quantity = 1): GameState {
+  const harvesterCost = getDroneCost(state.earth.harvesterLevel, quantity)
+  if (state.earth.humanFlag || !state.earth.harvesterFlag || state.production.unusedClips < harvesterCost) {
     return state
   }
 
-  const nextLevel = state.earth.harvesterLevel + 1
+  const nextLevel = state.earth.harvesterLevel + quantity
 
   return {
     ...state,
     production: {
       ...state.production,
-      unusedClips: state.production.unusedClips - state.earth.harvesterCost,
+      unusedClips: state.production.unusedClips - harvesterCost,
     },
     earth: {
       ...state.earth,
       harvesterLevel: nextLevel,
       powMod: Math.max(1, state.earth.powMod),
-      harvesterCost: Math.pow(nextLevel + 1, 2.25) * 1_000_000,
-      harvesterBill: state.earth.harvesterBill + state.earth.harvesterCost,
+      harvesterCost: getDroneCost(nextLevel, 1),
+      harvesterBill: state.earth.harvesterBill + harvesterCost,
     },
-    lastAction: 'Built a harvester drone',
+    lastAction: (quantity === 1) ? 'Built a harvester drone' : `Built ${quantity} harvester drones`,
   }
 }
 
@@ -228,27 +231,28 @@ export function rebootHarvesters(state: GameState): GameState {
   }
 }
 
-export function buyWireDrone(state: GameState): GameState {
-  if (state.earth.humanFlag || !state.earth.wireDroneFlag || state.production.unusedClips < state.earth.wireDroneCost) {
+export function buyWireDrone(state: GameState, quantity = 1): GameState {
+  const wireDroneCost = getDroneCost(state.earth.wireDroneLevel, quantity)
+  if (state.earth.humanFlag || !state.earth.wireDroneFlag || state.production.unusedClips < wireDroneCost) {
     return state
   }
 
-  const nextLevel = state.earth.wireDroneLevel + 1
+  const nextLevel = state.earth.wireDroneLevel + quantity
 
   return {
     ...state,
     production: {
       ...state.production,
-      unusedClips: state.production.unusedClips - state.earth.wireDroneCost,
+      unusedClips: state.production.unusedClips - wireDroneCost,
     },
     earth: {
       ...state.earth,
       wireDroneLevel: nextLevel,
       powMod: Math.max(1, state.earth.powMod),
-      wireDroneCost: Math.pow(nextLevel + 1, 2.25) * 1_000_000,
-      wireDroneBill: state.earth.wireDroneBill + state.earth.wireDroneCost,
+      wireDroneCost: getDroneCost(nextLevel, 1),
+      wireDroneBill: state.earth.wireDroneBill + wireDroneCost,
     },
-    lastAction: 'Built a wire drone',
+    lastAction: (quantity === 1) ? 'Built a wire drone' : `Built ${quantity} wire drones`,
   }
 }
 
@@ -270,6 +274,30 @@ export function rebootWireDrones(state: GameState): GameState {
       wireDroneBill: 0,
     },
   }
+}
+
+export function getDroneCost(level: number, quantity: number): number {
+  let cost = 0
+  for (let i = 0; i < quantity; i++) {
+    cost += Math.pow(i + level + 1, 2.25) * 1_000_000
+  }
+  return cost
+}
+
+export function getFarmCost(level: number, quantity: number): number {
+  let cost = 0
+  for (let i = 0; i < quantity; i++) {
+    cost += Math.pow(i + level + 1, 2.78) * 10_000_000
+  }
+  return cost
+}
+
+export function getBatteryCost(level: number, quantity: number): number {
+  let cost = 0
+  for (let i = 0; i < quantity; i++) {
+    cost += Math.pow(i + level + 1, 2.54) * 1_000_000
+  }
+  return cost
 }
 
 function acquireMatter(state: GameState): GameState {
