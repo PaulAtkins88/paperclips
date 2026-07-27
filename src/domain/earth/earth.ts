@@ -99,6 +99,10 @@ export function rebootFactories(state: GameState): GameState {
 }
 
 export function buyFarm(state: GameState, quantity = 1): GameState {
+  if (quantity < 1) {
+    return state
+  }
+
   const farmCost = getFarmCost(state.earth.farmLevel, quantity)
   if (state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < farmCost) {
     return state
@@ -143,6 +147,10 @@ export function rebootFarms(state: GameState): GameState {
 }
 
 export function buyBattery(state: GameState, quantity = 1): GameState {
+  if (quantity < 1) {
+    return state
+  }
+
   const batteryCost = getBatteryCost(state.earth.batteryLevel, quantity)
   if (state.earth.humanFlag || !state.earth.powerGridFlag || state.production.unusedClips < batteryCost) {
     return state
@@ -188,6 +196,10 @@ export function rebootBatteries(state: GameState): GameState {
 }
 
 export function buyHarvester(state: GameState, quantity = 1): GameState {
+  if (quantity < 1) {
+    return state
+  }
+
   const harvesterCost = getDroneCost(state.earth.harvesterLevel, quantity)
   if (state.earth.humanFlag || !state.earth.harvesterFlag || state.production.unusedClips < harvesterCost) {
     return state
@@ -233,6 +245,10 @@ export function rebootHarvesters(state: GameState): GameState {
 }
 
 export function buyWireDrone(state: GameState, quantity = 1): GameState {
+  if (quantity < 1) {
+    return state
+  }
+
   const wireDroneCost = getDroneCost(state.earth.wireDroneLevel, quantity)
   if (state.earth.humanFlag || !state.earth.wireDroneFlag || state.production.unusedClips < wireDroneCost) {
     return state
