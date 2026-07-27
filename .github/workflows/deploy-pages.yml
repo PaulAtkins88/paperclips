@@ -21,16 +21,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6.0.2
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.0.0
-        with:
-          version: 10.8.0
-
       - name: Setup Node
         uses: actions/setup-node@v6.3.0
         with:
           node-version: 22
-          cache: pnpm
+
+      - name: Enable Corepack (pins pnpm to the packageManager version)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.8.0 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
