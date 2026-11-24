@@ -50,3 +50,7 @@ The app's About / Credits panel links to the official App Store and Google Play 
 ## License
 
 See [`LICENSE`](LICENSE).
+
+---
+
+More of my work: [paulatkins.com.au](https://www.paulatkins.com.au/)
